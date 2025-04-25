@@ -1,0 +1,27 @@
+	section .icon
+
+	jp	___prgm_init
+	db	$01
+	public ___icon
+___icon:
+	db	$10, $10
+	db	$FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
+	db	$FF, $FF, $FF, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $FF, $FF, $FF
+	db	$FF, $FF, $FF, $21, $4A, $4A, $4A, $4A, $4A, $4A, $4A, $4A, $21, $FF, $FF, $FF
+	db	$FF, $FF, $FF, $21, $4A, $4A, $4A, $4A, $4A, $4A, $4A, $4A, $21, $FF, $FF, $FF
+	db	$FF, $FF, $FF, $21, $4A, $4A, $4A, $4A, $4A, $4A, $4A, $4A, $21, $FF, $FF, $FF
+	db	$FF, $FF, $FF, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $FF, $FF, $FF
+	db	$FF, $FF, $FF, $21, $D6, $D6, $21, $D6, $D6, $21, $E4, $E4, $21, $FF, $FF, $FF
+	db	$FF, $FF, $FF, $21, $D6, $D6, $21, $D6, $D6, $21, $E4, $E4, $21, $FF, $FF, $FF
+	db	$FF, $FF, $FF, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $FF, $FF, $FF
+	db	$FF, $FF, $FF, $21, $D6, $D6, $21, $D6, $D6, $21, $E4, $E4, $21, $FF, $FF, $FF
+	db	$FF, $FF, $FF, $21, $D6, $D6, $21, $D6, $D6, $21, $E4, $E4, $21, $FF, $FF, $FF
+	db	$FF, $FF, $FF, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $FF, $FF, $FF
+	db	$FF, $FF, $FF, $21, $D6, $D6, $D6, $D6, $D6, $21, $E4, $E4, $21, $FF, $FF, $FF
+	db	$FF, $FF, $FF, $21, $D6, $D6, $D6, $D6, $D6, $21, $E4, $E4, $21, $FF, $FF, $FF
+	db	$FF, $FF, $FF, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $FF, $FF, $FF
+	db	$FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
+	public ___description
+___description:
+	db	"Arithmetic Speed Drill", 0
+___prgm_init:
