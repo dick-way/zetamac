@@ -86,8 +86,8 @@ BB0_8:
 	section	.text,"ax",@progbits
 
 	section	.text,"ax",@progbits
-	public	_randIntFraction
-_randIntFraction:
+	public	_randIntArray
+_randIntArray:
 	call	__frameset0
 	call	_random
 	ld	bc, (ix + 9)
@@ -301,7 +301,7 @@ _redrawScreen:
 	pop	hl
 	ld	hl, (_score)
 	push	hl
-	ld	hl, _.str.12
+	ld	hl, _.str.21
 	push	hl
 	ld	hl, 4
 	push	hl
@@ -353,7 +353,7 @@ _redrawScreen:
 	push	hl
 	ld	hl, 6
 	push	hl
-	ld	hl, _.str.13
+	ld	hl, _.str.22
 	push	hl
 	call	_gfx_PrintStringXY
 	pop	hl
@@ -366,15 +366,8 @@ _redrawScreen:
 	public	_appendGuess
 _appendGuess:
 	call	__frameset0
-	ld	hl, (_inputLock)
-	add	hl, bc
-	or	a, a
-	sbc	hl, bc
-	jr	nz, BB7_3
-	ld	hl, 1
-	ld	de, _guess
-	ld	(_inputLock), hl
-	push	de
+	ld	hl, _guess
+	push	hl
 	call	_strlen
 	push	hl
 	pop	de
@@ -385,14 +378,14 @@ _appendGuess:
 	or	a, a
 	sbc	hl, bc
 	call	pe, __setflag
-	jp	p, BB7_3
+	jp	p, BB7_2
 	ld	hl, (ix + 6)
 	push	de
 	push	hl
 	call	_appendChar
 	pop	hl
 	pop	hl
-BB7_3:
+BB7_2:
 	pop	ix
 	ret
 	section	.text,"ax",@progbits
@@ -400,11 +393,6 @@ BB7_3:
 	section	.text,"ax",@progbits
 	public	_clearGuess
 _clearGuess:
-	ld	hl, (_inputLock)
-	add	hl, bc
-	or	a, a
-	sbc	hl, bc
-	jr	nz, BB8_2
 	scf
 	sbc	hl, hl
 	push	hl
@@ -425,16 +413,13 @@ _clearGuess:
 	pop	hl
 	xor	a, a
 	ld	(_guess), a
-	ld	hl, 1
-	ld	(_inputLock), hl
-BB8_2:
 	ret
 	section	.text,"ax",@progbits
 
 	section	.text,"ax",@progbits
 	public	_textEntry
 _textEntry:
-	ld	hl, -24
+	ld	hl, -15
 	call	__frameset
 	ld	iy, _difference
 	lea	hl, ix - 9
@@ -443,6 +428,12 @@ _textEntry:
 	ld	(ix - 15), hl
 BB9_1:
 	call	_kb_Scan
+	ld	hl, -720878
+	ld	c, (hl)
+	inc	hl
+	ld	b, (hl)
+	ld	a, c
+	ld	(_key1), a
 	ld	hl, -720874
 	push	de
 	ld	e, (hl)
@@ -452,97 +443,386 @@ BB9_1:
 	ld	iyh, d
 	pop	de
 	ld	a, iyl
-	ld	(_key1), a
-	ld	hl, -720872
-	ld	c, (hl)
-	inc	hl
-	ld	b, (hl)
-	ld	a, c
-	ld	(_key2), a
-	ld	hl, -720870
-	push	de
-	ld	e, (hl)
-	inc	hl
-	ld	d, (hl)
-	ld	l, e
-	ld	h, d
-	pop	de
-	ld	(ix - 18), hl
-	ld	a, l
 	ld	(_key3), a
-	ld	hl, -720868
-	push	de
+	ld	hl, -720872
 	ld	e, (hl)
 	inc	hl
 	ld	d, (hl)
-	ld	l, e
-	ld	h, d
-	pop	de
-	ld	(ix - 21), hl
-	ld	a, l
+	ld	a, e
 	ld	(_key4), a
-	ld	hl, -720878
-	push	de
+	ld	hl, -720870
 	ld	e, (hl)
 	inc	hl
 	ld	d, (hl)
-	ld	l, e
-	ld	h, d
-	pop	de
-	ld	(ix - 24), hl
-	ld	a, l
+	ld	a, e
 	ld	(_key5), a
-	dec	iyl
-	ld	de, 0
+	ld	hl, -720868
+	ld	e, (hl)
+	inc	hl
+	ld	d, (hl)
+	ld	a, e
+	ld	(_key6), a
+	ld	a, c
+	cp	a, 64
+	jp	z, BB9_85
 	ld	a, iyl
-	cp	a, 8
-	jr	c, BB9_4
-BB9_2:
-	ld	a, c
-	cp	a, 2
-	jr	nz, BB9_6
-	ld	hl, (_character2)
-	jr	BB9_13
-BB9_4:
-	ld	de, 0
-	ld	e, iyl
-	ld	hl, JTI9_0
-	add	hl, de
-	add	hl, de
-	add	hl, de
-	ld	de, 0
-	ld	hl, (hl)
-	jp	(hl)
-BB9_5:
+	and	a, 1
+	bit	0, a
+	jr	z, BB9_5
+	ld	hl, (_inputLock)
+	add	hl, bc
+	or	a, a
+	sbc	hl, bc
+	jr	nz, BB9_5
 	ld	hl, (_character0)
-	jr	BB9_13
-BB9_6:
-	ld	a, c
-	cp	a, 4
-	jr	nz, BB9_8
-	ld	hl, (_character5)
-	jr	BB9_13
-BB9_8:
-	ld	a, c
-	cp	a, 8
-	jp	nz, BB9_27
-	ld	hl, (_character8)
-	jr	BB9_13
-BB9_10:
-	ld	hl, (_character1)
-	jr	BB9_13
-BB9_11:
-	ld	hl, (_character4)
-	jr	BB9_13
-BB9_12:
-	ld	hl, (_character7)
-BB9_13:
 	push	hl
 	call	_appendGuess
-	ld	de, 0
 	pop	hl
-BB9_14:
-	push	de
+	ld	hl, 1
+	ld	(_inputLock), hl
+	ld	a, (_key3)
+	ld	iyl, a
+	jr	BB9_7
+BB9_5:
+	bit	0, a
+	jr	nz, BB9_7
+	or	a, a
+	sbc	hl, hl
+	ld	(_inputLock), hl
+BB9_7:
+	ld	a, iyl
+	and	a, 2
+	ld	e, a
+	or	a, a
+	jr	z, BB9_10
+	ld	hl, (_inputLock+3)
+	add	hl, bc
+	or	a, a
+	sbc	hl, bc
+	jr	nz, BB9_10
+	ld	hl, (_character1)
+	push	hl
+	call	_appendGuess
+	pop	hl
+	ld	hl, 1
+	ld	(_inputLock+3), hl
+	ld	a, (_key3)
+	ld	iyl, a
+	jr	BB9_12
+BB9_10:
+	ld	a, e
+	or	a, a
+	jr	nz, BB9_12
+	or	a, a
+	sbc	hl, hl
+	ld	(_inputLock+3), hl
+BB9_12:
+	ld	a, iyl
+	and	a, 4
+	ld	e, a
+	or	a, a
+	jr	z, BB9_15
+	ld	hl, (_inputLock+12)
+	add	hl, bc
+	or	a, a
+	sbc	hl, bc
+	jr	nz, BB9_15
+	ld	hl, (_character4)
+	push	hl
+	call	_appendGuess
+	pop	hl
+	ld	hl, 1
+	ld	(_inputLock+12), hl
+	ld	a, (_key3)
+	ld	iyl, a
+	jr	BB9_17
+BB9_15:
+	ld	a, e
+	or	a, a
+	jr	nz, BB9_17
+	or	a, a
+	sbc	hl, hl
+	ld	(_inputLock+12), hl
+BB9_17:
+	ld	a, iyl
+	and	a, 8
+	ld	e, a
+	or	a, a
+	jr	z, BB9_20
+	ld	hl, (_inputLock+21)
+	add	hl, bc
+	or	a, a
+	sbc	hl, bc
+	jr	nz, BB9_20
+	ld	hl, (_character7)
+	push	hl
+	call	_appendGuess
+	pop	hl
+	ld	hl, 1
+	jr	BB9_21
+BB9_20:
+	ld	a, e
+	or	a, a
+	ld	hl, 0
+	jr	nz, BB9_22
+BB9_21:
+	ld	(_inputLock+21), hl
+BB9_22:
+	ld	a, (_key4)
+	ld	e, a
+	and	a, 2
+	ld	c, a
+	or	a, a
+	jr	z, BB9_25
+	ld	hl, (_inputLock+6)
+	add	hl, bc
+	or	a, a
+	sbc	hl, bc
+	jr	nz, BB9_25
+	ld	hl, (_character2)
+	push	hl
+	call	_appendGuess
+	pop	hl
+	ld	hl, 1
+	ld	(_inputLock+6), hl
+	ld	a, (_key4)
+	ld	e, a
+	jr	BB9_27
+BB9_25:
+	ld	a, c
+	or	a, a
+	jr	nz, BB9_27
+	or	a, a
+	sbc	hl, hl
+	ld	(_inputLock+6), hl
+BB9_27:
+	ld	a, e
+	and	a, 4
+	ld	c, a
+	or	a, a
+	jr	z, BB9_30
+	ld	hl, (_inputLock+15)
+	add	hl, bc
+	or	a, a
+	sbc	hl, bc
+	jr	nz, BB9_30
+	ld	hl, (_character5)
+	push	hl
+	call	_appendGuess
+	pop	hl
+	ld	hl, 1
+	ld	(_inputLock+15), hl
+	ld	a, (_key4)
+	ld	e, a
+	jr	BB9_32
+BB9_30:
+	ld	a, c
+	or	a, a
+	jr	nz, BB9_32
+	or	a, a
+	sbc	hl, hl
+	ld	(_inputLock+15), hl
+BB9_32:
+	ld	a, e
+	and	a, 8
+	ld	e, a
+	or	a, a
+	jr	z, BB9_35
+	ld	hl, (_inputLock+24)
+	add	hl, bc
+	or	a, a
+	sbc	hl, bc
+	jr	nz, BB9_35
+	ld	hl, (_character8)
+	push	hl
+	call	_appendGuess
+	pop	hl
+	ld	hl, 1
+	jr	BB9_36
+BB9_35:
+	ld	a, e
+	or	a, a
+	ld	hl, 0
+	jr	nz, BB9_37
+BB9_36:
+	ld	(_inputLock+24), hl
+BB9_37:
+	ld	a, (_key5)
+	ld	e, a
+	and	a, 2
+	ld	c, a
+	or	a, a
+	jr	z, BB9_40
+	ld	hl, (_inputLock+9)
+	add	hl, bc
+	or	a, a
+	sbc	hl, bc
+	jr	nz, BB9_40
+	ld	hl, (_character3)
+	push	hl
+	call	_appendGuess
+	pop	hl
+	ld	hl, 1
+	ld	(_inputLock+9), hl
+	ld	a, (_key5)
+	ld	e, a
+	jr	BB9_42
+BB9_40:
+	ld	a, c
+	or	a, a
+	jr	nz, BB9_42
+	or	a, a
+	sbc	hl, hl
+	ld	(_inputLock+9), hl
+BB9_42:
+	ld	a, e
+	and	a, 4
+	ld	c, a
+	or	a, a
+	jr	z, BB9_45
+	ld	hl, (_inputLock+18)
+	add	hl, bc
+	or	a, a
+	sbc	hl, bc
+	jr	nz, BB9_45
+	ld	hl, (_character6)
+	push	hl
+	call	_appendGuess
+	pop	hl
+	ld	hl, 1
+	ld	(_inputLock+18), hl
+	ld	a, (_key5)
+	ld	e, a
+	jr	BB9_47
+BB9_45:
+	ld	a, c
+	or	a, a
+	jr	nz, BB9_47
+	or	a, a
+	sbc	hl, hl
+	ld	(_inputLock+18), hl
+BB9_47:
+	ld	a, e
+	and	a, 8
+	ld	c, a
+	or	a, a
+	jr	z, BB9_50
+	ld	hl, (_inputLock+27)
+	add	hl, bc
+	or	a, a
+	sbc	hl, bc
+	jr	nz, BB9_50
+	ld	hl, (_character9)
+	push	hl
+	call	_appendGuess
+	pop	hl
+	ld	hl, 1
+	ld	(_inputLock+27), hl
+	ld	a, (_key5)
+	ld	e, a
+	jr	BB9_52
+BB9_50:
+	ld	a, c
+	or	a, a
+	jr	nz, BB9_52
+	or	a, a
+	sbc	hl, hl
+	ld	(_inputLock+27), hl
+BB9_52:
+	ld	a, e
+	and	a, 1
+	bit	0, a
+	jr	z, BB9_55
+	ld	hl, (_inputLock+33)
+	add	hl, bc
+	or	a, a
+	sbc	hl, bc
+	jr	nz, BB9_55
+	ld	hl, (_characterM)
+	push	hl
+	call	_appendGuess
+	pop	hl
+	ld	hl, 1
+	jr	BB9_56
+BB9_55:
+	bit	0, a
+	ld	hl, 0
+	jr	nz, BB9_57
+BB9_56:
+	ld	(_inputLock+33), hl
+BB9_57:
+	ld	a, (_key6)
+	ld	e, a
+	and	a, 1
+	ld	c, a
+	ld	a, (_guess)
+	bit	0, c
+	jr	z, BB9_60
+	ld	hl, (_inputLock+54)
+	add	hl, bc
+	or	a, a
+	sbc	hl, bc
+	jr	nz, BB9_60
+	or	a, a
+	jp	nz, BB9_86
+BB9_60:
+	bit	0, c
+	jr	nz, BB9_62
+	or	a, a
+	sbc	hl, hl
+	ld	(_inputLock+54), hl
+BB9_62:
+	ld	a, e
+	and	a, 64
+	ld	c, a
+	or	a, a
+	jr	z, BB9_65
+	ld	hl, (_inputLock+48)
+	add	hl, bc
+	or	a, a
+	sbc	hl, bc
+	jr	nz, BB9_65
+	call	_clearGuess
+	ld	hl, 1
+	ld	(_inputLock+48), hl
+	ld	a, (_key6)
+	ld	e, a
+	jr	BB9_67
+BB9_65:
+	ld	a, c
+	or	a, a
+	jr	nz, BB9_67
+	or	a, a
+	sbc	hl, hl
+	ld	(_inputLock+48), hl
+BB9_67:
+	ld	bc, 0
+	ld	a, e
+	and	a, 16
+	ld	e, a
+	or	a, a
+	jr	z, BB9_70
+	ld	hl, (_inputLock+30)
+	add	hl, bc
+	or	a, a
+	sbc	hl, bc
+	jr	nz, BB9_70
+	ld	hl, (_characterS)
+	push	hl
+	call	_appendGuess
+	ld	bc, 0
+	pop	hl
+	ld	hl, 1
+	jr	BB9_71
+BB9_70:
+	ld	a, e
+	or	a, a
+	ld	hl, 0
+	jr	nz, BB9_72
+BB9_71:
+	ld	(_inputLock+30), hl
+BB9_72:
+	push	bc
 	call	_gfx_SetTextFGColor
 	pop	hl
 	scf
@@ -561,6 +841,7 @@ BB9_14:
 	pop	hl
 	pop	hl
 	call	_clock
+	ld	iy, 0
 	ld	bc, (_start)
 	ld	a, (_start+3)
 	call	__lsub
@@ -568,8 +849,7 @@ BB9_14:
 	pop	bc
 	ld	a, e
 	call	__ultof
-	or	a, a
-	sbc	hl, hl
+	lea	hl, iy
 	ld	e, 56
 	call	__fmul
 	push	bc
@@ -585,22 +865,21 @@ BB9_14:
 	ld	e, 58
 	call	__fcmp
 	ld	e, 1
-	jp	p, BB9_16
+	jp	p, BB9_74
 	ld	e, 0
-BB9_16:
+BB9_74:
 	bit	0, e
-	ld	hl, 0
-	jr	nz, BB9_18
+	jr	nz, BB9_76
 	push	bc
-	pop	hl
-BB9_18:
+	pop	iy
+BB9_76:
 	bit	0, e
 	ld	e, 0
-	jr	nz, BB9_20
+	jr	nz, BB9_78
 	ld	e, a
-BB9_20:
+BB9_78:
 	push	de
-	push	hl
+	push	iy
 	ld	hl, (ix - 12)
 	push	hl
 	call	_os_FloatToReal
@@ -637,13 +916,14 @@ BB9_20:
 	ld	a, (_difference+3)
 	ld	e, a
 	ld	bc, 2097152
-	ld	a, 65
+	ld	d, 65
+	ld	a, d
 	call	__fcmp
-	jp	p, BB9_22
+	jp	p, BB9_80
 	ld	hl, 6
 	push	hl
 	push	hl
-	ld	hl, _.str
+	ld	hl, _.str.9
 	push	hl
 	call	_gfx_PrintStringXY
 	pop	hl
@@ -663,6 +943,8 @@ BB9_20:
 	ld	hl, 38
 	push	hl
 	call	_gfx_FillRectangle
+	ld	d, 65
+	ld	bc, 2097152
 	pop	hl
 	pop	hl
 	pop	hl
@@ -670,22 +952,21 @@ BB9_20:
 	ld	hl, (_difference)
 	ld	a, (_difference+3)
 	ld	e, a
-BB9_22:
-	ld	bc, 2097152
-	ld	a, 65
+BB9_80:
+	ld	a, d
 	call	__fcmp
 	ld	a, 1
-	jp	m, BB9_24
+	jp	m, BB9_82
 	ld	a, 0
-BB9_24:
+BB9_82:
 	ld	hl, (_digitShift)
 	ld	de, 6
 	add	hl, de
 	bit	0, a
-	jr	nz, BB9_26
+	jr	nz, BB9_84
 	push	de
 	pop	hl
-BB9_26:
+BB9_84:
 	push	de
 	push	hl
 	ld	hl, _timerDisp
@@ -701,104 +982,507 @@ BB9_26:
 	ld	e, h
 	call	__fcmp
 	jp	m, BB9_1
-	jp	BB9_42
-BB9_27:
-	ld	hl, (ix - 18)
-	dec	l
-	ld	a, l
-	cp	a, 8
-	jr	c, BB9_31
-BB9_28:
-	ld	hl, (ix - 21)
-	ld	a, l
-	cp	a, 1
-	jr	nz, BB9_33
-	ld	hl, (_inputLock)
-	ld	a, (_guess)
-	add	hl, bc
-	or	a, a
-	sbc	hl, bc
-	jp	nz, BB9_14
-	or	a, a
-	jr	nz, BB9_42
-	jp	BB9_14
-BB9_31:
-	ld	de, 0
-	ld	e, l
-	ld	hl, JTI9_1
-	add	hl, de
-	add	hl, de
-	add	hl, de
-	ld	de, 0
-	ld	hl, (hl)
-	jp	(hl)
-BB9_32:
-	ld	hl, (_characterM)
-	jp	BB9_13
-BB9_33:
-	ld	a, l
-	cp	a, 16
-	jr	nz, BB9_35
-	ld	hl, (_characterS)
-	jp	BB9_13
-BB9_35:
-	ld	a, l
-	cp	a, 64
-	jr	nz, BB9_40
-	call	_clearGuess
-	ld	de, 0
-	jp	BB9_14
-BB9_37:
-	ld	hl, (_character3)
-	jp	BB9_13
-BB9_38:
-	ld	hl, (_character6)
-	jp	BB9_13
-BB9_39:
-	ld	hl, (_character9)
-	jp	BB9_13
-BB9_40:
-	ld	hl, (ix - 24)
-	ld	a, l
-	cp	a, 64
-	jr	z, BB9_43
-	or	a, a
-	sbc	hl, hl
-	ld	(_inputLock), hl
-	jp	BB9_14
-BB9_42:
-	ld	sp, ix
-	pop	ix
-	ret
-BB9_43:
+	jr	BB9_87
+BB9_85:
 	call	_gfx_End
 	or	a, a
 	sbc	hl, hl
 	push	hl
 	call	_exit
 	pop	hl
+BB9_86:
+	ld	hl, 1
+	ld	(_inputLock+54), hl
+BB9_87:
+	ld	sp, ix
+	pop	ix
+	ret
 	section	.text,"ax",@progbits
-	section	.rodata,"a",@progbits
-	private	JTI9_0
-JTI9_0:
-	dl	BB9_5
-	dl	BB9_10
-	dl	BB9_2
-	dl	BB9_11
-	dl	BB9_2
-	dl	BB9_2
-	dl	BB9_2
-	dl	BB9_12
-	private	JTI9_1
-JTI9_1:
-	dl	BB9_32
-	dl	BB9_37
-	dl	BB9_28
-	dl	BB9_38
-	dl	BB9_28
-	dl	BB9_28
-	dl	BB9_28
-	dl	BB9_39
+
+	section	.text,"ax",@progbits
+	public	_ptypeRemoveItem
+_ptypeRemoveItem:
+	ld	hl, -18
+	call	__frameset
+	ld	iy, (ix + 6)
+	or	a, a
+	sbc	hl, hl
+	ld	(ix - 3), hl
+	ld	de, (_ptypeSize)
+	ld	bc, 0
+	lea	hl, iy
+	sbc	hl, bc
+	call	pe, __setflag
+	jp	m, BB10_8
+	lea	hl, iy
+	or	a, a
+	sbc	hl, de
+	call	pe, __setflag
+	jp	p, BB10_8
+	lea	bc, iy
+	ld	iy, 3
+	dec	de
+	push	de
+	pop	hl
+	or	a, a
+	sbc	hl, bc
+	call	pe, __setflag
+	push	bc
+	pop	hl
+	jp	m, BB10_4
+	push	de
+	pop	bc
+BB10_4:
+	ld	(ix - 9), bc
+	ld	bc, 1
+	ld	(ix - 3), bc
+	lea	bc, iy
+	call	__imulu
+	push	hl
+	pop	bc
+	ld	iy, _ptypeState
+	add	iy, bc
+	ld	hl, _ptypeProblems
+	add	hl, bc
+	ld	(ix - 6), hl
+	ld	hl, (ix - 9)
+	ld	bc, (ix + 6)
+	or	a, a
+	sbc	hl, bc
+BB10_5:
+	add	hl, bc
+	or	a, a
+	sbc	hl, bc
+	jr	z, BB10_7
+	ld	(ix - 15), de
+	ld	de, (ix - 6)
+	ld	(ix - 18), iy
+	push	de
+	pop	iy
+	lea	bc, iy + 3
+	ld	(ix - 9), bc
+	ld	bc, (iy + 3)
+	ld	de, (ix - 15)
+	ld	(iy), bc
+	ld	iy, (ix - 18)
+	lea	bc, iy + 3
+	ld	(ix - 12), bc
+	ld	bc, (iy + 3)
+	ld	(iy), bc
+	dec	hl
+	ld	bc, (ix - 9)
+	ld	(ix - 6), bc
+	ld	iy, (ix - 12)
+	jr	BB10_5
+BB10_7:
+	ld	(_ptypeSize), de
+BB10_8:
+	ld	hl, (ix - 3)
+	ld	sp, ix
+	pop	ix
+	ret
+	section	.text,"ax",@progbits
+
+	section	.text,"ax",@progbits
+	public	_triangleSelection
+_triangleSelection:
+	ld	hl, -18
+	call	__frameset
+	ld	hl, (ix + 9)
+	ld	iy, _ptypeName
+	ld	bc, 3
+	call	__imulu
+	push	hl
+	pop	de
+	add	iy, de
+	ld	(ix - 6), iy
+	ld	hl, (iy)
+	push	hl
+	call	_gfx_GetStringWidth
+	pop	de
+	ld	c, 1
+	call	__ishru
+	ld	(ix - 15), hl
+	ld	hl, (ix + 9)
+	ld	bc, 12
+	call	__imulu
+	ld	(ix - 3), hl
+	ld	hl, (ix - 6)
+	ld	hl, (hl)
+	push	hl
+	call	_gfx_GetStringWidth
+	pop	de
+	ld	c, 1
+	call	__ishru
+	ld	(ix - 12), hl
+	ld	a, (ix + 6)
+	ld	l, a
+	push	hl
+	call	_gfx_SetColor
+	pop	hl
+	ld	hl, 150
+	ld	de, (ix - 15)
+	or	a, a
+	sbc	hl, de
+	ld	(ix - 18), hl
+	ld	iy, (ix - 3)
+	lea	hl, iy
+	ld	bc, 66
+	add	hl, bc
+	ld	(ix - 6), hl
+	lea	hl, iy
+	ld	bc, 62
+	add	hl, bc
+	ld	(ix - 9), hl
+	ld	hl, 154
+	or	a, a
+	sbc	hl, de
+	ld	bc, 64
+	add	iy, bc
+	ld	(ix - 3), iy
+	push	iy
+	push	hl
+	ld	hl, (ix - 9)
+	push	hl
+	ld	de, (ix - 18)
+	push	de
+	ld	hl, (ix - 6)
+	push	hl
+	push	de
+	call	_gfx_FillTriangle
+	pop	hl
+	pop	hl
+	pop	hl
+	pop	hl
+	pop	hl
+	pop	hl
+	ld	hl, (ix - 12)
+	push	hl
+	pop	iy
+	ld	de, 166
+	add	iy, de
+	ld	de, 162
+	add	hl, de
+	ld	de, (ix - 3)
+	push	de
+	push	hl
+	ld	hl, (ix - 9)
+	push	hl
+	push	iy
+	ld	hl, (ix - 6)
+	push	hl
+	push	iy
+	call	_gfx_FillTriangle
+	ld	sp, ix
+	pop	ix
+	ret
+	section	.text,"ax",@progbits
+
+	section	.text,"ax",@progbits
+	public	_redrawConfigMenu
+_redrawConfigMenu:
+	ld	hl, -12
+	call	__frameset
+	ld	iy, _ptypeState
+	ld	hl, 64
+	ld	bc, _ptypeName
+BB12_1:
+	ld	de, 172
+	ld	(ix - 3), hl
+	or	a, a
+	sbc	hl, de
+	jp	z, BB12_5
+	push	bc
+	pop	hl
+	ld	(ix - 9), hl
+	ld	de, (hl)
+	ld	hl, (ix - 3)
+	ld	bc, -4
+	add	hl, bc
+	push	hl
+	push	de
+	ld	(ix - 6), iy
+	call	_printCentered
+	pop	hl
+	pop	hl
+	ld	hl, (ix - 6)
+	ld	hl, (hl)
+	add	hl, bc
+	or	a, a
+	sbc	hl, bc
+	jr	nz, BB12_4
+	or	a, a
+	sbc	hl, hl
+	push	hl
+	call	_gfx_SetColor
+	pop	hl
+	ld	hl, (ix - 9)
+	ld	de, (hl)
+	push	de
+	call	_gfx_GetStringWidth
+	pop	de
+	ld	a, 1
+	ld	c, a
+	call	__ishru
+	push	hl
+	pop	de
+	ld	hl, 160
+	or	a, a
+	sbc	hl, de
+	ld	(ix - 12), hl
+	ld	hl, (ix - 9)
+	ld	hl, (hl)
+	push	hl
+	call	_gfx_GetStringWidth
+	pop	de
+	ld	c, 1
+	call	__ishru
+	ld	de, 160
+	add	hl, de
+	ld	de, (ix - 3)
+	push	de
+	push	hl
+	push	de
+	ld	hl, (ix - 12)
+	push	hl
+	call	_gfx_Line
+	pop	hl
+	pop	hl
+	pop	hl
+	pop	hl
+BB12_4:
+	ld	iy, (ix - 9)
+	lea	iy, iy + 3
+	lea	bc, iy
+	ld	de, 12
+	ld	hl, (ix - 3)
+	add	hl, de
+	ld	iy, (ix - 6)
+	lea	iy, iy + 3
+	jp	BB12_1
+BB12_5:
+	ld	hl, (_ptypeSelection)
+	push	hl
+	or	a, a
+	sbc	hl, hl
+	push	hl
+	call	_triangleSelection
+	ld	sp, ix
+	pop	ix
+	ret
+	section	.text,"ax",@progbits
+
+	section	.text,"ax",@progbits
+	public	_configMenu
+_configMenu:
+BB13_1:
+	call	_kb_Scan
+	ld	hl, -720868
+	push	de
+	ld	e, (hl)
+	inc	hl
+	ld	d, (hl)
+	ld	l, e
+	ld	h, d
+	pop	de
+	ld	a, l
+	ld	(_key6), a
+	ld	iy, -720866
+	push	hl
+	ld	l, (iy)
+	ld	h, (iy + 1)
+	ex	(sp), hl
+	pop	iy
+	ld	a, iyl
+	ld	(_key7), a
+	ld.sis	bc, 1
+	call	__sand
+	ld	e, l
+	ld	d, h
+	bit	0, e
+	jr	z, BB13_3
+	ld	hl, (_inputLock+54)
+	add	hl, bc
+	or	a, a
+	sbc	hl, bc
+	jp	z, BB13_35
+BB13_3:
+	bit	0, e
+	jr	nz, BB13_5
+	or	a, a
+	sbc	hl, hl
+	ld	(_inputLock), hl
+BB13_5:
+	ld	a, iyl
+	and	a, 8
+	ld	e, a
+	or	a, a
+	jr	z, BB13_9
+	ld	hl, (_inputLock+36)
+	add	hl, bc
+	or	a, a
+	sbc	hl, bc
+	jr	nz, BB13_9
+	ld	hl, (_ptypeSelection)
+	push	hl
+	ld	hl, 255
+	push	hl
+	call	_triangleSelection
+	pop	hl
+	pop	hl
+	ld	de, (_ptypeSelection)
+	push	de
+	pop	hl
+	ld	bc, 1
+	or	a, a
+	sbc	hl, bc
+	call	pe, __setflag
+	jp	p, BB13_11
+	ld	de, 8
+	jr	BB13_12
+BB13_9:
+	ld	a, e
+	or	a, a
+	jr	nz, BB13_13
+	or	a, a
+	sbc	hl, hl
+	ld	(_inputLock+36), hl
+	jr	BB13_13
+BB13_11:
+	dec	de
+BB13_12:
+	ld	(_ptypeSelection), de
+	call	_redrawConfigMenu
+	ld	hl, 1
+	ld	(_inputLock+36), hl
+	ld	a, (_key7)
+	ld	iyl, a
+BB13_13:
+	ld	a, iyl
+	and	a, 1
+	bit	0, a
+	jr	z, BB13_17
+	ld	hl, (_inputLock+39)
+	add	hl, bc
+	or	a, a
+	sbc	hl, bc
+	jr	nz, BB13_17
+	ld	hl, (_ptypeSelection)
+	push	hl
+	ld	hl, 255
+	push	hl
+	call	_triangleSelection
+	pop	hl
+	pop	hl
+	ld	de, (_ptypeSelection)
+	push	de
+	pop	hl
+	ld	bc, 8
+	or	a, a
+	sbc	hl, bc
+	call	pe, __setflag
+	jp	m, BB13_19
+	ld	de, 0
+	jr	BB13_20
+BB13_17:
+	bit	0, a
+	jr	nz, BB13_21
+	or	a, a
+	sbc	hl, hl
+	ld	(_inputLock+39), hl
+	jr	BB13_21
+BB13_19:
+	inc	de
+BB13_20:
+	ld	(_ptypeSelection), de
+	call	_redrawConfigMenu
+	ld	hl, 1
+	ld	(_inputLock+39), hl
+	ld	a, (_key7)
+	ld	iyl, a
+BB13_21:
+	ld	a, iyl
+	and	a, 2
+	ld	e, a
+	or	a, a
+	jr	z, BB13_26
+	ld	hl, (_inputLock+42)
+	add	hl, bc
+	or	a, a
+	sbc	hl, bc
+	jr	nz, BB13_26
+	ld	hl, (_ptypeSelection)
+	ld	bc, 3
+	call	__imulu
+	push	hl
+	pop	de
+	ld	iy, _ptypeState
+	add	iy, de
+	ld	hl, (iy)
+	ld	de, 1
+	or	a, a
+	sbc	hl, de
+	ex	de, hl
+	jr	nz, BB13_25
+	ld	hl, 0
+BB13_25:
+	ld	(iy), hl
+	call	_redrawConfigMenu
+	ld	hl, 1
+	ld	(_inputLock+42), hl
+	ld	a, (_key7)
+	ld	iyl, a
+	jr	BB13_28
+BB13_26:
+	ld	a, e
+	or	a, a
+	jr	nz, BB13_28
+	or	a, a
+	sbc	hl, hl
+	ld	(_inputLock+42), hl
+BB13_28:
+	ld	a, iyl
+	and	a, 4
+	ld	e, a
+	or	a, a
+	jr	z, BB13_33
+	ld	hl, (_inputLock+45)
+	add	hl, bc
+	or	a, a
+	sbc	hl, bc
+	jr	nz, BB13_33
+	ld	hl, (_ptypeSelection)
+	ld	bc, 3
+	call	__imulu
+	push	hl
+	pop	de
+	ld	iy, _ptypeState
+	add	iy, de
+	ld	hl, (iy)
+	ld	de, 1
+	or	a, a
+	sbc	hl, de
+	ex	de, hl
+	jr	nz, BB13_32
+	ld	hl, 0
+BB13_32:
+	ld	(iy), hl
+	call	_redrawConfigMenu
+	ld	hl, 1
+	jr	BB13_34
+BB13_33:
+	ld	a, e
+	or	a, a
+	ld	hl, 0
+	jp	nz, BB13_1
+BB13_34:
+	ld	(_inputLock+45), hl
+	jp	BB13_1
+BB13_35:
+	ld	hl, 1
+	ld	(_inputLock+54), hl
+	ret
+	section	.text,"ax",@progbits
 
 	section	.text,"ax",@progbits
 	public	_fairFactors
@@ -816,15 +1500,15 @@ _fairFactors:
 	ld	de, 4
 	or	a, a
 	sbc	hl, de
-	jr	nc, BB10_2
+	jr	nc, BB14_2
 	call	_random
 	ld	bc, 1
 	xor	a, a
 	call	__land
 	ld	bc, (ix + 6)
 	bit	0, l
-	jp	nz, BB10_15
-BB10_2:
+	jp	nz, BB14_15
+BB14_2:
 	ld	de, 2
 	push	bc
 	pop	hl
@@ -833,18 +1517,18 @@ BB10_2:
 	call	pe, __setflag
 	push	bc
 	pop	hl
-	jp	p, BB10_4
+	jp	p, BB14_4
 	ld	hl, 1
-BB10_4:
+BB14_4:
 	ld	(ix - 9), hl
 	ld	hl, 1
 	ld	(ix - 3), hl
 	ld	hl, (ix - 9)
-BB10_5:
+BB14_5:
 	ld	de, (ix - 3)
 	or	a, a
 	sbc	hl, de
-	jr	z, BB10_9
+	jr	z, BB14_9
 	push	bc
 	pop	hl
 	ld	bc, (ix - 3)
@@ -852,7 +1536,7 @@ BB10_5:
 	add	hl, bc
 	or	a, a
 	sbc	hl, bc
-	jr	nz, BB10_8
+	jr	nz, BB14_8
 	ld	hl, (ix - 3)
 	push	hl
 	ld	hl, (ix - 6)
@@ -867,14 +1551,14 @@ BB10_5:
 	ld	hl, (ix - 6)
 	inc	hl
 	ld	(ix - 6), hl
-BB10_8:
+BB14_8:
 	ld	bc, (ix + 6)
 	ld	hl, (ix - 9)
 	ld	de, (ix - 3)
 	inc	de
 	ld	(ix - 3), de
-	jr	BB10_5
-BB10_9:
+	jr	BB14_5
+BB14_9:
 	ld	bc, 12
 	ld	hl, (ix + 6)
 	or	a, a
@@ -883,18 +1567,18 @@ BB10_9:
 	call	pe, __setflag
 	push	hl
 	pop	bc
-	jp	p, BB10_11
+	jp	p, BB14_11
 	ld	bc, 11
-BB10_11:
+BB14_11:
 	ld	(ix - 3), hl
 	ld	iy, (ix - 12)
-BB10_12:
+BB14_12:
 	push	bc
 	pop	hl
 	ld	de, (ix - 3)
 	or	a, a
 	sbc	hl, de
-	jp	z, BB10_24
+	jp	z, BB14_24
 	ld	hl, (ix - 3)
 	inc	hl
 	ld	(ix - 3), hl
@@ -905,7 +1589,7 @@ BB10_12:
 	add	hl, bc
 	or	a, a
 	sbc	hl, bc
-	jr	nz, BB10_12
+	jr	nz, BB14_12
 	ld	hl, (ix - 3)
 	push	hl
 	ld	hl, (ix - 6)
@@ -921,36 +1605,36 @@ BB10_12:
 	ld	hl, (ix - 6)
 	inc	hl
 	ld	(ix - 6), hl
-	jr	BB10_12
-BB10_15:
+	jr	BB14_12
+BB14_15:
 	ld	hl, 2
 	ld	(ix - 3), hl
 	ld	de, 6
-BB10_16:
+BB14_16:
 	ld	hl, (ix - 3)
 	or	a, a
 	sbc	hl, de
-	jr	z, BB10_23
+	jr	z, BB14_23
 	push	bc
 	pop	hl
 	ld	de, (ix - 3)
 	or	a, a
 	sbc	hl, de
-	jr	z, BB10_22
+	jr	z, BB14_22
 	ld	hl, (ix - 3)
 	call	__irems
 	add	hl, bc
 	or	a, a
 	sbc	hl, bc
-	jr	nz, BB10_20
+	jr	nz, BB14_20
 	ld	hl, (ix + 6)
 	ld	bc, (ix - 3)
 	call	__irems
 	add	hl, bc
 	or	a, a
 	sbc	hl, bc
-	jr	z, BB10_21
-BB10_20:
+	jr	z, BB14_21
+BB14_20:
 	ld	hl, (ix - 3)
 	push	hl
 	ld	hl, (ix - 6)
@@ -965,17 +1649,17 @@ BB10_20:
 	ld	hl, (ix - 6)
 	inc	hl
 	ld	(ix - 6), hl
-BB10_21:
+BB14_21:
 	ld	bc, (ix + 6)
-BB10_22:
+BB14_22:
 	ld	hl, (ix - 3)
 	inc	hl
 	ld	(ix - 3), hl
 	ld	de, 6
-	jr	BB10_16
-BB10_23:
+	jr	BB14_16
+BB14_23:
 	ld	iy, (ix - 12)
-BB10_24:
+BB14_24:
 	ld	hl, (ix - 6)
 	ld	(_factorsSize), hl
 	lea	hl, iy
@@ -990,21 +1674,21 @@ _gcd:
 	call	__frameset0
 	ld	de, (ix + 6)
 	ld	bc, (ix + 9)
-BB11_1:
+BB15_1:
 	push	bc
 	pop	hl
 	add	hl, bc
 	or	a, a
 	sbc	hl, bc
-	jr	z, BB11_3
+	jr	z, BB15_3
 	ex	de, hl
 	call	__irems
 	push	bc
 	pop	de
 	push	hl
 	pop	bc
-	jr	BB11_1
-BB11_3:
+	jr	BB15_1
+BB15_3:
 	ex	de, hl
 	pop	ix
 	ret
@@ -1017,21 +1701,21 @@ _lcm:
 	ld	de, (ix + 6)
 	ld	iy, (ix + 9)
 	lea	bc, iy
-BB12_1:
+BB16_1:
 	push	bc
 	pop	hl
 	add	hl, bc
 	or	a, a
 	sbc	hl, bc
-	jr	z, BB12_3
+	jr	z, BB16_3
 	ex	de, hl
 	call	__irems
 	push	bc
 	pop	de
 	push	hl
 	pop	bc
-	jr	BB12_1
-BB12_3:
+	jr	BB16_1
+BB16_3:
 	lea	hl, iy
 	ld	bc, (ix + 6)
 	call	__imulu
@@ -1071,7 +1755,7 @@ _arithmetic:
 	push	hl
 	ld	hl, (ix - 3)
 	push	hl
-	ld	hl, _.str.14
+	ld	hl, _.str.23
 	push	hl
 	ld	hl, 17
 	push	hl
@@ -1091,14 +1775,14 @@ _arithmetic:
 	sbc	hl, de
 	ld	a, (ix + 6)
 	cp	a, 43
-	jr	z, BB13_2
+	jr	z, BB17_2
 	push	hl
 	pop	iy
-BB13_2:
+BB17_2:
 	ld	de, (ix - 3)
 	add	iy, de
 	push	iy
-	ld	hl, _.str.15
+	ld	hl, _.str.24
 	push	hl
 	ld	hl, 7
 	push	hl
@@ -1130,7 +1814,7 @@ _multiplication:
 	push	hl
 	ld	hl, (ix - 3)
 	push	hl
-	ld	hl, _.str.16
+	ld	hl, _.str.25
 	push	hl
 	ld	hl, 17
 	push	hl
@@ -1146,7 +1830,7 @@ _multiplication:
 	ld	bc, (ix - 3)
 	call	__imulu
 	push	hl
-	ld	hl, _.str.15
+	ld	hl, _.str.24
 	push	hl
 	ld	hl, 7
 	push	hl
@@ -1180,7 +1864,7 @@ _division:
 	ld	de, (ix - 3)
 	push	de
 	push	hl
-	ld	hl, _.str.17
+	ld	hl, _.str.26
 	push	hl
 	ld	hl, 17
 	push	hl
@@ -1194,7 +1878,7 @@ _division:
 	pop	hl
 	ld	hl, (ix - 6)
 	push	hl
-	ld	hl, _.str.15
+	ld	hl, _.str.24
 	push	hl
 	ld	hl, 7
 	push	hl
@@ -1222,7 +1906,7 @@ _factorial:
 	ld	de, 3
 	add	iy, de
 	push	iy
-	ld	hl, _.str.18
+	ld	hl, _.str.27
 	push	hl
 	ld	hl, 17
 	push	hl
@@ -1238,13 +1922,13 @@ _factorial:
 	ld	hl, (ix - 3)
 	add	hl, de
 	ld	(ix - 3), hl
-BB16_1:
+BB20_1:
 	ld	hl, (ix - 3)
 	push	bc
 	pop	de
 	or	a, a
 	sbc	hl, de
-	jr	z, BB16_3
+	jr	z, BB20_3
 	push	bc
 	pop	de
 	push	de
@@ -1255,11 +1939,11 @@ BB16_1:
 	inc	de
 	push	de
 	pop	bc
-	jr	BB16_1
-BB16_3:
+	jr	BB20_1
+BB20_3:
 	ld	hl, (ix - 6)
 	push	hl
-	ld	hl, _.str.15
+	ld	hl, _.str.24
 	push	hl
 	ld	hl, 7
 	push	hl
@@ -1291,31 +1975,31 @@ _arithmeticFraction:
 	pop	bc
 	inc	bc
 	ld	(ix - 6), bc
-BB17_1:
+BB21_1:
 	inc	iy
 	lea	de, iy
-BB17_2:
+BB21_2:
 	push	bc
 	pop	hl
 	add	hl, bc
 	or	a, a
 	sbc	hl, bc
-	jr	z, BB17_4
+	jr	z, BB21_4
 	ex	de, hl
 	call	__irems
 	push	bc
 	pop	de
 	push	hl
 	pop	bc
-	jr	BB17_2
-BB17_4:
+	jr	BB21_2
+BB21_4:
 	ex	de, hl
 	ld	de, 2
 	or	a, a
 	sbc	hl, de
 	call	pe, __setflag
 	ld	bc, (ix - 6)
-	jp	p, BB17_1
+	jp	p, BB21_1
 	ld	(ix - 9), iy
 	push	bc
 	call	_fairFactors
@@ -1329,36 +2013,36 @@ BB17_4:
 	push	hl
 	ld	hl, (ix - 15)
 	push	hl
-	call	_randIntFraction
+	call	_randIntArray
 	ld	iy, (ix - 12)
 	ld	(ix - 3), hl
 	pop	hl
 	pop	hl
-BB17_6:
+BB21_6:
 	inc	iy
 	lea	de, iy
 	ld	bc, (ix - 3)
-BB17_7:
+BB21_7:
 	push	bc
 	pop	hl
 	add	hl, bc
 	or	a, a
 	sbc	hl, bc
-	jr	z, BB17_9
+	jr	z, BB21_9
 	ex	de, hl
 	call	__irems
 	push	bc
 	pop	de
 	push	hl
 	pop	bc
-	jr	BB17_7
-BB17_9:
+	jr	BB21_7
+BB21_9:
 	ex	de, hl
 	ld	de, 2
 	or	a, a
 	sbc	hl, de
 	call	pe, __setflag
-	jp	p, BB17_6
+	jp	p, BB21_6
 	ld	(ix - 12), iy
 	ld	c, (ix - 16)
 	ld	a, c
@@ -1372,17 +2056,17 @@ BB17_9:
 	or	a, a
 	sbc	hl, bc
 	ld	iy, (ix - 9)
-	jr	nz, BB17_13
+	jr	nz, BB21_13
 	ld	hl, (ix - 3)
 	ld	bc, 1
 	or	a, a
 	sbc	hl, bc
-	jr	nz, BB17_13
+	jr	nz, BB21_13
 	ld	hl, (ix - 12)
 	push	hl
 	push	de
 	push	iy
-	ld	hl, _.str.14
+	ld	hl, _.str.23
 	push	hl
 	ld	hl, 17
 	push	hl
@@ -1396,20 +2080,20 @@ BB17_9:
 	pop	hl
 	pop	hl
 	ld	bc, (ix - 6)
-	jp	BB17_19
-BB17_13:
+	jp	BB21_19
+BB21_13:
 	ld	hl, (ix - 19)
 	add	hl, bc
 	or	a, a
 	sbc	hl, bc
 	ld	bc, (ix - 3)
-	jr	nz, BB17_15
+	jr	nz, BB21_15
 	push	bc
 	ld	hl, (ix - 12)
 	push	hl
 	push	de
 	push	iy
-	ld	hl, _.str.19
+	ld	hl, _.str.28
 	push	hl
 	ld	hl, 17
 	push	hl
@@ -1421,21 +2105,21 @@ BB17_13:
 	add	hl, sp
 	ld	sp, hl
 	ld	bc, (ix - 6)
-	jr	BB17_20
-BB17_15:
+	jr	BB21_20
+BB21_15:
 	push	bc
 	pop	hl
 	ld	bc, 1
 	or	a, a
 	sbc	hl, bc
-	jr	nz, BB17_17
+	jr	nz, BB21_17
 	ld	hl, (ix - 12)
 	push	hl
 	push	de
 	ld	hl, (ix - 6)
 	push	hl
 	push	iy
-	ld	hl, _.str.20
+	ld	hl, _.str.29
 	push	hl
 	ld	hl, 17
 	push	hl
@@ -1444,8 +2128,8 @@ BB17_15:
 	call	_snprintf
 	ld	bc, (ix - 6)
 	ld	hl, 21
-	jr	BB17_18
-BB17_17:
+	jr	BB21_18
+BB21_17:
 	ld	hl, (ix - 3)
 	push	hl
 	ld	hl, (ix - 12)
@@ -1454,7 +2138,7 @@ BB17_17:
 	ld	hl, (ix - 6)
 	push	hl
 	push	iy
-	ld	hl, _.str.21
+	ld	hl, _.str.30
 	push	hl
 	ld	hl, 17
 	push	hl
@@ -1463,12 +2147,12 @@ BB17_17:
 	call	_snprintf
 	ld	bc, (ix - 6)
 	ld	hl, 24
-BB17_18:
+BB21_18:
 	add	hl, sp
 	ld	sp, hl
-BB17_19:
+BB21_19:
 	ld	de, (ix - 3)
-BB17_20:
+BB21_20:
 	push	de
 	push	bc
 	call	_lcm
@@ -1494,10 +2178,10 @@ BB17_20:
 	call	__ineg
 	ld	a, (ix - 16)
 	cp	a, 43
-	jr	z, BB17_22
+	jr	z, BB21_22
 	push	hl
 	pop	iy
-BB17_22:
+BB21_22:
 	ld	de, (ix - 9)
 	add	iy, de
 	lea	hl, iy
@@ -1514,21 +2198,21 @@ BB17_22:
 	push	hl
 	pop	de
 	ld	bc, (ix - 6)
-BB17_23:
+BB21_23:
 	push	bc
 	pop	hl
 	add	hl, bc
 	or	a, a
 	sbc	hl, bc
-	jr	z, BB17_25
+	jr	z, BB21_25
 	ex	de, hl
 	call	__irems
 	push	bc
 	pop	de
 	push	hl
 	pop	bc
-	jr	BB17_23
-BB17_25:
+	jr	BB21_23
+BB21_25:
 	lea	hl, iy
 	push	de
 	pop	bc
@@ -1542,20 +2226,20 @@ BB17_25:
 	ld	bc, 1
 	or	a, a
 	sbc	hl, bc
-	jr	nz, BB17_27
+	jr	nz, BB21_27
 	push	iy
-	ld	hl, _.str.15
+	ld	hl, _.str.24
 	push	hl
 	ld	hl, 7
 	push	hl
 	ld	hl, _answer
 	push	hl
 	call	_snprintf
-	jr	BB17_28
-BB17_27:
+	jr	BB21_28
+BB21_27:
 	push	de
 	push	iy
-	ld	hl, _.str.22
+	ld	hl, _.str.31
 	push	hl
 	ld	hl, 7
 	push	hl
@@ -1563,7 +2247,7 @@ BB17_27:
 	push	hl
 	call	_snprintf
 	pop	hl
-BB17_28:
+BB21_28:
 	pop	hl
 	pop	hl
 	pop	hl
@@ -1615,7 +2299,7 @@ _exponentiation:
 	push	hl
 	ld	hl, (ix - 3)
 	push	hl
-	ld	hl, _.str.23
+	ld	hl, _.str.32
 	push	hl
 	ld	hl, 17
 	push	hl
@@ -1635,7 +2319,7 @@ _exponentiation:
 	pop	de
 	pop	de
 	push	hl
-	ld	hl, _.str.12
+	ld	hl, _.str.21
 	push	hl
 	ld	hl, 7
 	push	hl
@@ -1693,7 +2377,7 @@ _exponentiationInverse:
 	ld	de, (ix - 6)
 	push	de
 	push	hl
-	ld	hl, _.str.24
+	ld	hl, _.str.33
 	push	hl
 	ld	hl, 17
 	push	hl
@@ -1707,7 +2391,7 @@ _exponentiationInverse:
 	pop	hl
 	ld	hl, (ix - 3)
 	push	hl
-	ld	hl, _.str.15
+	ld	hl, _.str.24
 	push	hl
 	ld	hl, 7
 	push	hl
@@ -1722,70 +2406,77 @@ _exponentiationInverse:
 	section	.text,"ax",@progbits
 	public	_generateProblem
 _generateProblem:
-	call	_random
-	ld	bc, 9
-	call	__iremu
+	ld	hl, _ptypeProblems
+	ld	de, (_ptypeSize)
+	push	de
+	push	hl
+	call	_randIntArray
 	push	hl
 	pop	de
+	pop	hl
+	pop	hl
+	ld	bc, 9
+	push	de
+	pop	hl
 	or	a, a
 	sbc	hl, bc
-	jr	c, BB20_2
+	jr	c, BB24_2
 	ret
-BB20_2:
-	ld	hl, JTI20_0
+BB24_2:
+	ld	hl, JTI24_0
 	add	hl, de
 	add	hl, de
 	add	hl, de
 	ld	hl, (hl)
 	jp	(hl)
-BB20_3:
+BB24_3:
 	ld	hl, 43
-	jr	BB20_5
-BB20_4:
+	jr	BB24_5
+BB24_4:
 	ld	hl, 45
-BB20_5:
+BB24_5:
 	push	hl
 	call	_arithmetic
-	jr	BB20_12
-BB20_6:
+	jr	BB24_12
+BB24_6:
 	call	_multiplication
 	ret
-BB20_7:
+BB24_7:
 	call	_division
 	ret
-BB20_8:
+BB24_8:
 	call	_factorial
 	ret
-BB20_9:
+BB24_9:
 	ld	hl, 43
-	jr	BB20_11
-BB20_10:
+	jr	BB24_11
+BB24_10:
 	ld	hl, 45
-BB20_11:
+BB24_11:
 	push	hl
 	call	_arithmeticFraction
-BB20_12:
+BB24_12:
 	pop	hl
 	ret
-BB20_13:
+BB24_13:
 	call	_exponentiation
 	ret
-BB20_14:
+BB24_14:
 	call	_exponentiationInverse
 	ret
 	section	.text,"ax",@progbits
 	section	.rodata,"a",@progbits
-	private	JTI20_0
-JTI20_0:
-	dl	BB20_3
-	dl	BB20_4
-	dl	BB20_6
-	dl	BB20_7
-	dl	BB20_8
-	dl	BB20_9
-	dl	BB20_10
-	dl	BB20_13
-	dl	BB20_14
+	private	JTI24_0
+JTI24_0:
+	dl	BB24_3
+	dl	BB24_4
+	dl	BB24_6
+	dl	BB24_7
+	dl	BB24_8
+	dl	BB24_9
+	dl	BB24_10
+	dl	BB24_13
+	dl	BB24_14
 
 	section	.text,"ax",@progbits
 	public	_main
@@ -1798,12 +2489,88 @@ _main:
 	pop	de
 	push	hl
 	call	_srand
+	ld	iy, _ptypeProblems
 	pop	hl
+	ld	bc, 9
+	ld	de, 0
+BB25_1:
+	push	de
+	pop	hl
+	or	a, a
+	sbc	hl, bc
+	jr	z, BB25_3
+	ld	(iy), de
+	inc	de
+	lea	iy, iy + 3
+	jr	BB25_1
+BB25_3:
+	ld	de, 27
+	ld	iy, 0
+BB25_4:
+	lea	hl, iy
+	or	a, a
+	sbc	hl, de
+	jr	z, BB25_6
+	lea	bc, iy
+	ld	hl, _ptypeState
+	add	hl, bc
+	ld	bc, 1
+	ld	(hl), bc
+	ld	bc, 3
+	add	iy, bc
+	jr	BB25_4
+BB25_6:
 	call	_gfx_Begin
 	ld	hl, -33
 	push	hl
 	call	_gfx_SetTextTransparentColor
 	pop	hl
+	scf
+	sbc	hl, hl
+	push	hl
+	call	_gfx_FillScreen
+	pop	hl
+	call	_redrawConfigMenu
+	call	_configMenu
+	ld	bc, (_ptypeSize)
+	ld	iy, 3
+	ld	de, 0
+BB25_7:
+	push	de
+	pop	hl
+	or	a, a
+	sbc	hl, bc
+	call	pe, __setflag
+	jp	p, BB25_12
+	ld	(ix - 3), bc
+	push	de
+	pop	hl
+	lea	bc, iy
+	call	__imulu
+	push	hl
+	pop	bc
+	ld	hl, _ptypeState
+	add	hl, bc
+	ld	hl, (hl)
+	add	hl, bc
+	or	a, a
+	sbc	hl, bc
+	jr	nz, BB25_10
+	push	de
+	ld	(ix - 3), de
+	call	_ptypeRemoveItem
+	ld	de, (ix - 3)
+	ld	iy, 3
+	pop	hl
+	dec	de
+	ld	bc, (_ptypeSize)
+	jr	BB25_11
+BB25_10:
+	ld	bc, (ix - 3)
+BB25_11:
+	inc	de
+	jr	BB25_7
+BB25_12:
 	scf
 	sbc	hl, hl
 	push	hl
@@ -1866,12 +2633,12 @@ _main:
 	pop	hl
 	pop	hl
 	call	_clock
-	ld	d, 0
 	ld	a, e
 	ld	(_start), hl
 	ld	(_start+3), a
-BB21_1:
-	ld	a, d
+	ld	e, 0
+BB25_13:
+	ld	a, e
 	ld	(_problem), a
 	call	_generateProblem
 	call	_redrawScreen
@@ -1883,23 +2650,32 @@ BB21_1:
 	call	_strcmp
 	pop	de
 	pop	de
+	ld	de, (_score)
 	add	hl, bc
 	or	a, a
 	sbc	hl, bc
-	jr	nz, BB21_3
-	ld	hl, (_score)
-	inc	hl
+	ld	hl, 1
+	jr	z, BB25_15
+	push	de
+	pop	hl
+	ld	bc, 1
+	or	a, a
+	sbc	hl, bc
+	call	pe, __setflag
+	ld	hl, -1
+	jp	m, BB25_16
+BB25_15:
+	add	hl, de
 	ld	(_score), hl
-BB21_3:
+BB25_16:
 	call	_clearGuess
 	ld	bc, (_difference)
 	ld	a, (_difference+3)
 	or	a, a
 	sbc	hl, hl
-	ld	d, h
-	ld	e, d
+	ld	e, h
 	call	__fcmp
-	jp	m, BB21_1
+	jp	m, BB25_13
 	scf
 	sbc	hl, hl
 	push	hl
@@ -1907,7 +2683,7 @@ BB21_3:
 	pop	hl
 	ld	hl, 80
 	push	hl
-	ld	hl, _.str.25
+	ld	hl, _.str.34
 	push	hl
 	call	_printCentered
 	pop	hl
@@ -1919,10 +2695,10 @@ BB21_3:
 	call	_printCentered
 	pop	hl
 	pop	hl
-BB21_5:
+BB25_18:
 	call	_os_GetCSC
 	or	a, a
-	jr	z, BB21_5
+	jr	z, BB25_18
 	call	_gfx_End
 	or	a, a
 	sbc	hl, hl
@@ -2026,138 +2802,198 @@ _EXPMAX:
 	dl	3
 	dl	3
 
-	section	.rodata,"a",@progbits
-	public	_PROBLEMWEIGHTS
-_PROBLEMWEIGHTS:
-	dd	0x3de147ae
-	dd	0x3de147ae
-	dd	0x3de147ae
-	dd	0x3de147ae
-	dd	0x3de147ae
-	dd	0x3de147ae
-	dd	0x3de147ae
-	dd	0x3de147ae
-	dd	0x3de147ae
+	section	.data,"aw",@progbits
+	public	_ptypeSize
+_ptypeSize:
+	dl	9
+
+	section	.bss,"aw",@nobits
+	public	_ptypeSelection
+_ptypeSelection:
+	rb	3
 
 	section	.rodata,"a",@progbits
 	private	_.str
 _.str:
-	db	"0", 0
-
-	section	.data,"aw",@progbits
-	public	_character0
-_character0:
-	dl	_.str
+	db	"Addition", 0
 
 	section	.rodata,"a",@progbits
 	private	_.str.1
 _.str.1:
-	db	"1", 0
-
-	section	.data,"aw",@progbits
-	public	_character1
-_character1:
-	dl	_.str.1
+	db	"Subtraction", 0
 
 	section	.rodata,"a",@progbits
 	private	_.str.2
 _.str.2:
-	db	"2", 0
-
-	section	.data,"aw",@progbits
-	public	_character2
-_character2:
-	dl	_.str.2
+	db	"Multiplication", 0
 
 	section	.rodata,"a",@progbits
 	private	_.str.3
 _.str.3:
-	db	"3", 0
-
-	section	.data,"aw",@progbits
-	public	_character3
-_character3:
-	dl	_.str.3
+	db	"Division", 0
 
 	section	.rodata,"a",@progbits
 	private	_.str.4
 _.str.4:
-	db	"4", 0
-
-	section	.data,"aw",@progbits
-	public	_character4
-_character4:
-	dl	_.str.4
+	db	"Factorials", 0
 
 	section	.rodata,"a",@progbits
 	private	_.str.5
 _.str.5:
-	db	"5", 0
-
-	section	.data,"aw",@progbits
-	public	_character5
-_character5:
-	dl	_.str.5
+	db	"Addition - Fraction", 0
 
 	section	.rodata,"a",@progbits
 	private	_.str.6
 _.str.6:
-	db	"6", 0
-
-	section	.data,"aw",@progbits
-	public	_character6
-_character6:
-	dl	_.str.6
+	db	"Subtraction - Fraction", 0
 
 	section	.rodata,"a",@progbits
 	private	_.str.7
 _.str.7:
-	db	"7", 0
-
-	section	.data,"aw",@progbits
-	public	_character7
-_character7:
-	dl	_.str.7
+	db	"Exponentiation", 0
 
 	section	.rodata,"a",@progbits
 	private	_.str.8
 _.str.8:
-	db	"8", 0
+	db	"Exponentiation - Inverse", 0
 
 	section	.data,"aw",@progbits
-	public	_character8
-_character8:
+	public	_ptypeName
+_ptypeName:
+	dl	_.str
+	dl	_.str.1
+	dl	_.str.2
+	dl	_.str.3
+	dl	_.str.4
+	dl	_.str.5
+	dl	_.str.6
+	dl	_.str.7
 	dl	_.str.8
 
 	section	.rodata,"a",@progbits
 	private	_.str.9
 _.str.9:
-	db	"9", 0
+	db	"0", 0
 
 	section	.data,"aw",@progbits
-	public	_character9
-_character9:
+	public	_character0
+_character0:
 	dl	_.str.9
 
 	section	.rodata,"a",@progbits
 	private	_.str.10
 _.str.10:
-	db	"/", 0
+	db	"1", 0
 
 	section	.data,"aw",@progbits
-	public	_characterS
-_characterS:
+	public	_character1
+_character1:
 	dl	_.str.10
 
 	section	.rodata,"a",@progbits
 	private	_.str.11
 _.str.11:
+	db	"2", 0
+
+	section	.data,"aw",@progbits
+	public	_character2
+_character2:
+	dl	_.str.11
+
+	section	.rodata,"a",@progbits
+	private	_.str.12
+_.str.12:
+	db	"3", 0
+
+	section	.data,"aw",@progbits
+	public	_character3
+_character3:
+	dl	_.str.12
+
+	section	.rodata,"a",@progbits
+	private	_.str.13
+_.str.13:
+	db	"4", 0
+
+	section	.data,"aw",@progbits
+	public	_character4
+_character4:
+	dl	_.str.13
+
+	section	.rodata,"a",@progbits
+	private	_.str.14
+_.str.14:
+	db	"5", 0
+
+	section	.data,"aw",@progbits
+	public	_character5
+_character5:
+	dl	_.str.14
+
+	section	.rodata,"a",@progbits
+	private	_.str.15
+_.str.15:
+	db	"6", 0
+
+	section	.data,"aw",@progbits
+	public	_character6
+_character6:
+	dl	_.str.15
+
+	section	.rodata,"a",@progbits
+	private	_.str.16
+_.str.16:
+	db	"7", 0
+
+	section	.data,"aw",@progbits
+	public	_character7
+_character7:
+	dl	_.str.16
+
+	section	.rodata,"a",@progbits
+	private	_.str.17
+_.str.17:
+	db	"8", 0
+
+	section	.data,"aw",@progbits
+	public	_character8
+_character8:
+	dl	_.str.17
+
+	section	.rodata,"a",@progbits
+	private	_.str.18
+_.str.18:
+	db	"9", 0
+
+	section	.data,"aw",@progbits
+	public	_character9
+_character9:
+	dl	_.str.18
+
+	section	.rodata,"a",@progbits
+	private	_.str.19
+_.str.19:
+	db	"/", 0
+
+	section	.data,"aw",@progbits
+	public	_characterS
+_characterS:
+	dl	_.str.19
+
+	section	.rodata,"a",@progbits
+	private	_.str.20
+_.str.20:
 	db	"-", 0
 
 	section	.data,"aw",@progbits
 	public	_characterM
 _characterM:
-	dl	_.str.11
+	dl	_.str.20
+
+	section	.bss,"aw",@nobits
+	public	_inputLock
+_inputLock:
+	rb	57
 
 	section	.bss,"aw",@nobits
 	public	_score
@@ -2174,25 +3010,20 @@ _spacingX:
 _spacingY:
 	dl	4
 
-	section	.bss,"aw",@nobits
-	public	_inputLock
-_inputLock:
-	rb	3
-
 	section	.data,"aw",@progbits
 	public	_timer_seconds
 _timer_seconds:
 	dd	0x42b40000
 
 	section	.data,"aw",@progbits
-	public	_header
-_header:
-	db	74
-
-	section	.data,"aw",@progbits
 	public	_digitShift
 _digitShift:
 	dl	8
+
+	section	.data,"aw",@progbits
+	public	_header
+_header:
+	db	74
 
 	section	.bss,"aw",@nobits
 	public	_guess
@@ -2210,23 +3041,18 @@ _scoreDisp:
 	rb	4
 
 	section	.rodata,"a",@progbits
-	private	_.str.12
-_.str.12:
+	private	_.str.21
+_.str.21:
 	db	"%i", 0
 
 	section	.rodata,"a",@progbits
-	private	_.str.13
-_.str.13:
-	db	"V 0.01-beta", 0
+	private	_.str.22
+_.str.22:
+	db	"V 1.01", 0
 
 	section	.bss,"aw",@nobits
 	public	_key1
 _key1:
-	rb	1
-
-	section	.bss,"aw",@nobits
-	public	_key2
-_key2:
 	rb	1
 
 	section	.bss,"aw",@nobits
@@ -2245,6 +3071,11 @@ _key5:
 	rb	1
 
 	section	.bss,"aw",@nobits
+	public	_key6
+_key6:
+	rb	1
+
+	section	.bss,"aw",@nobits
 	public	_start
 _start:
 	rb	4
@@ -2255,13 +3086,28 @@ _difference:
 	rb	4
 
 	section	.bss,"aw",@nobits
+	public	_ptypeProblems
+_ptypeProblems:
+	rb	27
+
+	section	.bss,"aw",@nobits
+	public	_ptypeState
+_ptypeState:
+	rb	27
+
+	section	.bss,"aw",@nobits
+	public	_key7
+_key7:
+	rb	1
+
+	section	.bss,"aw",@nobits
 	public	_factorsSize
 _factorsSize:
 	rb	3
 
 	section	.rodata,"a",@progbits
-	private	_.str.14
-_.str.14:
+	private	_.str.23
+_.str.23:
 	db	"%i %c %i", 0
 
 	section	.bss,"aw",@nobits
@@ -2270,59 +3116,64 @@ _answer:
 	rb	7
 
 	section	.rodata,"a",@progbits
-	private	_.str.15
-_.str.15:
-	db	"%d", 0
-
-	section	.rodata,"a",@progbits
-	private	_.str.16
-_.str.16:
-	db	"%i * %i", 0
-
-	section	.rodata,"a",@progbits
-	private	_.str.17
-_.str.17:
-	db	"%i / %i", 0
-
-	section	.rodata,"a",@progbits
-	private	_.str.18
-_.str.18:
-	db	"%i!", 0
-
-	section	.rodata,"a",@progbits
-	private	_.str.19
-_.str.19:
-	db	"%i %c %i/%i", 0
-
-	section	.rodata,"a",@progbits
-	private	_.str.20
-_.str.20:
-	db	"%i/%i %c %i", 0
-
-	section	.rodata,"a",@progbits
-	private	_.str.21
-_.str.21:
-	db	"%i/%i %c %i/%i", 0
-
-	section	.rodata,"a",@progbits
-	private	_.str.22
-_.str.22:
-	db	"%d/%d", 0
-
-	section	.rodata,"a",@progbits
-	private	_.str.23
-_.str.23:
-	db	"%i^%i", 0
-
-	section	.rodata,"a",@progbits
 	private	_.str.24
 _.str.24:
-	db	"%i^(1/%i)", 0
+	db	"%d", 0
 
 	section	.rodata,"a",@progbits
 	private	_.str.25
 _.str.25:
+	db	"%i * %i", 0
+
+	section	.rodata,"a",@progbits
+	private	_.str.26
+_.str.26:
+	db	"%i / %i", 0
+
+	section	.rodata,"a",@progbits
+	private	_.str.27
+_.str.27:
+	db	"%i!", 0
+
+	section	.rodata,"a",@progbits
+	private	_.str.28
+_.str.28:
+	db	"%i %c %i/%i", 0
+
+	section	.rodata,"a",@progbits
+	private	_.str.29
+_.str.29:
+	db	"%i/%i %c %i", 0
+
+	section	.rodata,"a",@progbits
+	private	_.str.30
+_.str.30:
+	db	"%i/%i %c %i/%i", 0
+
+	section	.rodata,"a",@progbits
+	private	_.str.31
+_.str.31:
+	db	"%d/%d", 0
+
+	section	.rodata,"a",@progbits
+	private	_.str.32
+_.str.32:
+	db	"%i^%i", 0
+
+	section	.rodata,"a",@progbits
+	private	_.str.33
+_.str.33:
+	db	"%i^(1/%i)", 0
+
+	section	.rodata,"a",@progbits
+	private	_.str.34
+_.str.34:
 	db	"program completed", 0
+
+	section	.bss,"aw",@nobits
+	public	_ptypeWeights
+_ptypeWeights:
+	rb	36
 
 	section	.bss,"aw",@nobits
 	public	_timerDisp
@@ -2337,13 +3188,17 @@ _timerDisp:
 	extern	_srand
 	extern	_gfx_SetTextFGColor
 	extern	_gfx_Begin
+	extern	_gfx_Line
 	extern	__fadd
 	extern	_rand
 	extern	_snprintf
 	extern	_os_RealToStr
+	extern	__sand
+	extern	__Unwind_SjLj_Unregister
 	extern	__ishl
 	extern	_strlen
 	extern	__idivs
+	extern	_gfx_FillTriangle
 	extern	__setflag
 	extern	_exit
 	extern	__iand
@@ -2368,7 +3223,6 @@ _timerDisp:
 	extern	_os_FloatToReal
 	extern	__irems
 	extern	__iremu
-	extern	__Unwind_SjLj_Unregister
 	extern	__fdiv
 	extern	__imulu
 	extern	_gfx_SetColor
@@ -2376,6 +3230,6 @@ _timerDisp:
 	extern	__land
 	extern	_gfx_PrintStringXY
 	extern	_gfx_End
-	extern	__frameset0
-	extern	__fcmp
 	extern	_clock
+	extern	__fcmp
+	extern	__frameset0

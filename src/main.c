@@ -10,6 +10,8 @@
 #include <math.h>
 #include <time.h>
 
+#define PTYPEMEM 9
+
 /*  arithmetic operation type          */
 
 const char ADD = '+';
@@ -49,7 +51,14 @@ const double BASEWEIGHTS[6] = {0.48, 0.16, 0.13, 0.13, 0.05, 0.05};
 const int EXPMIN = 3;
 const int EXPMAX[6] = {8, 4, 4, 4, 3, 3};
 
-const double PROBLEMWEIGHTS[9] = {0.11, 0.11, 0.11, 0.11, 0.11, 0.11, 0.11, 0.11, 0.11};  /*  TODO: Weighted probabilities, customization  */
+int ptypeProblems[PTYPEMEM];
+double ptypeWeights[PTYPEMEM];  /*  TODO: Weighted probabilities, customization  */
+int ptypeState[PTYPEMEM];
+
+int ptypeSize = 9;
+int ptypeSelection = 0;
+
+const char *ptypeName[] = {"Addition", "Subtraction", "Multiplication", "Division", "Factorials", "Addition - Fraction", "Subtraction - Fraction", "Exponentiation", "Exponentiation - Inverse"};
 
 const char* character0 = "0";
 const char* character1 = "1";
@@ -64,38 +73,35 @@ const char* character9 = "9";
 const char* characterS = "/";
 const char* characterM = "-";
 
-char problem[17];
+kb_key_t key1, key3, key4, key5, key6, key7;
+int inputLock[19] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
+char problem[17];
 char answer[7];
 char guess[7];
-int score = 0;
 
 char scoreDisp[4];
+int score = 0;
 
 int spacingX = 4;
 int spacingY = 4;
 
-kb_key_t key1, key2, key3, key4, key5;
-
-int inputLock = 0;
-
 float timer_seconds = 90.0f;
 float difference;
 
-char timerDisp[10];
 clock_t start;
+char timerDisp[10];
+int digitShift = 8;
 
 uint8_t header = 0x4A;
 
-int digitShift = 8;
-
-int randIntWeighted(int min, int max, const double weight[]) {
+int randIntWeighted(int min, int max, const double weight[]) {  /*  TODO: just doesn't work [?]  */
 
     double r = (double) rand() / RAND_MAX;
     double cumulative = 0.0;
     int range = max - min + 1;
 
-    for(int i = 0; i < range; i++) {
+    for (int i = 0; i < range; i++) {
     
         cumulative += weight[i];
 
@@ -111,7 +117,7 @@ int randIntWeighted(int min, int max, const double weight[]) {
 
 }
 
-int randIntFraction(int arr[], int size) {
+int randIntArray(int arr[], int size) {
 
     return arr[randInt(0, size - 1)];
 
@@ -121,7 +127,7 @@ int powInt(int base, int expo) {
 
     int product = 1;
 
-    for(int i = 0; i < expo; i++) {
+    for (int i = 0; i < expo; i++) {
 
         product *= base;
 
@@ -131,17 +137,17 @@ int powInt(int base, int expo) {
 
 }
 
-int* appendItem(int arr[], int size, int item) {
+int* appendItem(int arr[], int size, int item) {  /*  TODO: linked list, no malloc  */
 
     int* appended_arr = malloc((size + 1) * sizeof(int));
 
-    if(appended_arr == NULL) {
+    if (appended_arr == NULL) {
 
         return NULL;
 
     }
 
-    for(int i = 0; i < size; i++) {
+    for (int i = 0; i < size; i++) {
 
         appended_arr[i] = arr[i];
 
@@ -157,7 +163,7 @@ void appendChar(const char *item, int index) {
 
     int i = 0;
 
-    while(item[i] != '\0') {
+    while (item[i] != '\0') {
 
         guess[index + i] = item[i];
         i++;
@@ -205,9 +211,9 @@ void redrawScreen() {
     gfx_SetColor(0xFF);
     gfx_FillRectangle((GFX_LCD_WIDTH / 2) - 48, 80, 96, 8);
 
-    printCentered(problem, 80);
+    printCentered(problem, 80);  /*  TODO: LaTeX-type display for problem  */
 
-    snprintf(scoreDisp, sizeof(scoreDisp), "%i", score);
+    snprintf(scoreDisp, sizeof(scoreDisp), "%i", score);  /*  TODO: local top 5 leader board  */
 
     gfx_SetTextFGColor(0xFF);
     gfx_SetTextBGColor(header);
@@ -215,23 +221,17 @@ void redrawScreen() {
 
     gfx_SetTextFGColor(0x00);
     gfx_SetTextBGColor(0xFF);
-    gfx_PrintStringXY("V 0.01-beta", 6, GFX_LCD_HEIGHT - 14);
+    gfx_PrintStringXY("V 1.01", 6, GFX_LCD_HEIGHT - 14);
 
 }
 
 void appendGuess(const char *item) {
 
-    if(inputLock == 0) {
+    int length = (int) strlen(guess);
 
-        inputLock = 1;
+    if (length < 6) {
 
-        int length = (int) strlen(guess);
-
-        if(length < 6) {
-
-            appendChar(item, length);
-
-        }
+        appendChar(item, length);
 
     }
 
@@ -239,16 +239,10 @@ void appendGuess(const char *item) {
 
 void clearGuess() {
 
-    if(inputLock == 0) {
+    gfx_SetColor(0xFF);
+    gfx_FillRectangle((GFX_LCD_WIDTH / 2) - (48 / 2), 120, 48, 8);
 
-        gfx_SetColor(0xFF);
-        gfx_FillRectangle((GFX_LCD_WIDTH / 2) - (48 / 2), 120, 48, 8);
-
-        guess[0] = '\0';
-
-        inputLock = 1;
-
-    }
+    guess[0] = '\0';
 
 }
 
@@ -258,84 +252,184 @@ void textEntry() {
 
         kb_Scan();
 
-        key1 = kb_Data[3];
-        key2 = kb_Data[4];
-        key3 = kb_Data[5];
-        key4 = kb_Data[6];
-        key5 = kb_Data[1];
+        key1 = kb_Data[1];
+        key3 = kb_Data[3];
+        key4 = kb_Data[4];
+        key5 = kb_Data[5];
+        key6 = kb_Data[6];
 
-        if(key1 == kb_0) {
-
-            appendGuess(character0);
-
-        } else if (key1 == kb_1) {
-
-            appendGuess(character1);
-
-        } else if (key1 == kb_4) {
-
-            appendGuess(character4);
-
-        } else if (key1 == kb_7) {
-
-            appendGuess(character7);
-
-        } else if (key2 == kb_2) {
-
-            appendGuess(character2);
-
-        } else if (key2 == kb_5) {
-
-            appendGuess(character5);
-
-        } else if (key2 == kb_8) {
-
-            appendGuess(character8);
-
-        } else if (key3 == kb_3) {
-
-            appendGuess(character3);
-
-        } else if (key3 == kb_6) {
-
-            appendGuess(character6);
-
-        } else if (key3 == kb_9) {
-
-            appendGuess(character9);
-
-        } else if (key3 == kb_Chs) {
-
-            appendGuess(characterM);
-
-        } else if (key4 == kb_Enter) {
-
-            if(inputLock == 0 && guess[0] != '\0') {
-            
-                break;
-
-                inputLock = 1;
-
-            }
-
-        } else if (key4 == kb_Clear) {
-
-            clearGuess();
-
-        } else if (key4 == kb_Div) {
-
-            appendGuess(characterS);
-
-        } else if (key5 == kb_Mode) {
-
-        /*  Force quit  */
+        if (key1 == kb_Mode) {
 
             gfx_End();
             exit(0);
 
-        } else {
+        }
+        
+        if (key3 & kb_0 && inputLock[0] == 0) {
 
-            inputLock = 0;
+            appendGuess(character0);
+
+            inputLock[0] = 1;
+
+        } else if (!(key3 & kb_0)) {
+
+            inputLock[0] = 0;
+
+        }
+        
+        if (key3 & kb_1 && inputLock[1] == 0) {
+
+            appendGuess(character1);
+
+            inputLock[1] = 1;
+
+        } else if (!(key3 & kb_1)) {
+
+            inputLock[1] = 0;
+
+        }
+        
+        if (key3 & kb_4 && inputLock[4] == 0) {
+
+            appendGuess(character4);
+
+            inputLock[4] = 1;
+
+        } else if (!(key3 & kb_4)) {
+
+            inputLock[4] = 0;
+
+        }
+        
+        if (key3 & kb_7 && inputLock[7] == 0) {
+
+            appendGuess(character7);
+
+            inputLock[7] = 1;
+
+        } else if (!(key3 & kb_7)) {
+
+            inputLock[7] = 0;
+
+        }
+        
+        if (key4 & kb_2 && inputLock[2] == 0) {
+
+            appendGuess(character2);
+
+            inputLock[2] = 1;
+
+        } else if (!(key4 & kb_2)) {
+
+            inputLock[2] = 0;
+
+        }
+        
+        if (key4 & kb_5 && inputLock[5] == 0) {
+
+            appendGuess(character5);
+
+            inputLock[5] = 1;
+
+        } else if (!(key4 & kb_5)) {
+
+            inputLock[5] = 0;
+
+        }
+        
+        if (key4 & kb_8 && inputLock[8] == 0) {
+
+            appendGuess(character8);
+
+            inputLock[8] = 1;
+
+        } else if (!(key4 & kb_8)) {
+
+            inputLock[8] = 0;
+
+        }
+        
+        if (key5 & kb_3 && inputLock[3] == 0) {
+
+            appendGuess(character3);
+
+            inputLock[3] = 1;
+
+        } else if (!(key5 & kb_3)) {
+
+            inputLock[3] = 0;
+
+        }
+        
+        if (key5 & kb_6 && inputLock[6] == 0) {
+
+            appendGuess(character6);
+
+            inputLock[6] = 1;
+
+        } else if (!(key5 & kb_6)) {
+
+            inputLock[6] = 0;
+
+        }
+        
+        if (key5 & kb_9 && inputLock[9] == 0) {
+
+            appendGuess(character9);
+
+            inputLock[9] = 1;
+
+        } else if (!(key5 & kb_9)) {
+
+            inputLock[9] = 0;
+
+        }
+        
+        if (key5 & kb_Chs && inputLock[11] == 0) {
+
+            appendGuess(characterM);
+
+            inputLock[11] = 1;
+
+        } else if (!(key5 & kb_Chs)) {
+
+            inputLock[11] = 0;
+
+        }
+        
+        if (key6 & kb_Enter && inputLock[18] == 0 && guess[0] != '\0') {
+
+            inputLock[18] = 1;
+
+            break;
+
+        } else if (!(key6 & kb_Enter)) {
+
+            inputLock[18] = 0;
+
+        }
+        
+        if (key6 & kb_Clear && inputLock[16] == 0) {
+
+            clearGuess();
+
+            inputLock[16] = 1;
+
+        } else if (!(key6 & kb_Clear)) {
+
+            inputLock[16] = 0;
+
+        }
+        
+        if (key6 & kb_Div && inputLock[10] == 0) {
+
+            appendGuess(characterS);
+
+            inputLock[10] = 1;
+
+        } else if (!(key6 & kb_Div)) {
+
+            inputLock[10] = 0;
 
         }
 
@@ -343,7 +437,6 @@ void textEntry() {
         gfx_SetTextBGColor(0xFF);
         gfx_PrintStringXY(guess, (GFX_LCD_WIDTH / 2) - (48 / 2), 120);
 
-    /*  Calculate and print the elapsed time  */
         clock_t now = clock();
         float elapsed = (float)(now - start) / CLOCKS_PER_SEC;
 
@@ -354,16 +447,170 @@ void textEntry() {
 
 }
 
+int ptypeRemoveItem(int index) {
+
+    if (index < 0 || index >= ptypeSize) {
+
+        return 0;
+
+    }
+
+    for (int i = index; i < ptypeSize - 1; i++) {
+
+        ptypeProblems[i] = ptypeProblems[i + 1];
+        ptypeState[i] = ptypeState[i + 1];
+
+    }
+
+    ptypeSize--;
+
+    return 1;
+
+}
+
+void triangleSelection(int color, int selection) {
+
+    int x0 = (GFX_LCD_WIDTH / 2) - (gfx_GetStringWidth(ptypeName[selection]) / 2);
+    int y0 = (selection * 12);
+
+    int x1 = (GFX_LCD_WIDTH / 2) + (gfx_GetStringWidth(ptypeName[selection]) / 2);
+
+    gfx_SetColor(color);
+    gfx_FillTriangle((x0 - 10), y0 + 66, (x0 - 10), y0 + 62, (x0 - 6), y0 + 64);
+    gfx_FillTriangle((x1 + 6), y0 + 66, (x1 + 6), y0 + 62, (x1 + 2), y0 + 64);
+
+}
+
+void redrawConfigMenu() {
+
+    for (int i = 0; i < PTYPEMEM; i++) {
+
+        printCentered(ptypeName[i], 60 + (i * 12));
+
+        if (ptypeState[i] == 0) {
+
+            gfx_SetColor(0x00);
+            gfx_Line((GFX_LCD_WIDTH / 2) - (gfx_GetStringWidth(ptypeName[i]) / 2), (i * 12) + 64, (GFX_LCD_WIDTH / 2) + (gfx_GetStringWidth(ptypeName[i]) / 2), (i * 12) + 64);
+
+        }
+
+    }
+
+    triangleSelection(0x00, ptypeSelection);
+
+}
+
+void configMenu() {
+
+    do {
+
+        kb_Scan();
+
+        key6 = kb_Data[6];
+        key7 = kb_Data[7];
+
+        if (key6 & kb_Enter && inputLock[18] == 0) {
+
+            inputLock[18] = 1;
+
+            break;
+
+        } else if (!(key6 & kb_Enter)) {
+
+            inputLock[0] = 0;
+
+        }
+
+        if (key7 & kb_Up && inputLock[12] == 0) {
+
+            triangleSelection(0xFF, ptypeSelection);
+
+            if (ptypeSelection > 0) {
+
+                ptypeSelection--;
+
+            } else {
+
+                ptypeSelection = 8;
+
+            }
+
+            redrawConfigMenu();
+
+            inputLock[12] = 1;
+
+        } else if (!(key7 & kb_Up)) {
+
+            inputLock[12] = 0;
+
+        }
+
+        if (key7 & kb_Down && inputLock[13] == 0) {
+
+            triangleSelection(0xFF, ptypeSelection);
+
+            if (ptypeSelection < 8) {
+
+                ptypeSelection++;
+
+            } else {
+
+                ptypeSelection = 0;
+
+            }
+
+            redrawConfigMenu();
+
+            inputLock[13] = 1;
+
+        } else if (!(key7 & kb_Down)) {
+
+            inputLock[13] = 0;
+
+        }
+
+        if (key7 & kb_Left && inputLock[14] == 0) {
+
+            ptypeState[ptypeSelection] = (ptypeState[ptypeSelection] == 1) ? 0 : 1; 
+
+            redrawConfigMenu();
+
+            inputLock[14] = 1;
+
+        } else if (!(key7 & kb_Left)) {
+
+            inputLock[14] = 0;
+
+        }
+
+        if (key7 & kb_Right && inputLock[15] == 0) {
+
+            ptypeState[ptypeSelection] = (ptypeState[ptypeSelection] == 1) ? 0 : 1; 
+
+            redrawConfigMenu();
+
+            inputLock[15] = 1;
+
+        } else if (!(key7 & kb_Right)) {
+
+            inputLock[15] = 0;
+
+        }
+
+    } while(1);
+
+}
+
 int* fairFactors(int term1Den) {
 
     int* factors;
     int size = 0;
 
-    if(1 < term1Den && term1Den < 6 && randInt(0, 1) == 1) {
+    if (1 < term1Den && term1Den < 6 && randInt(0, 1) == 1) {
 
-        for(int i = 2; i < 6; i++) {
+        for (int i = 2; i < 6; i++) {
 
-            if(term1Den != i && (i % term1Den != 0 || term1Den % i != 0)) {
+            if (term1Den != i && (i % term1Den != 0 || term1Den % i != 0)) {
 
                 factors = appendItem(factors, size, i);
                 size++;
@@ -374,9 +621,9 @@ int* fairFactors(int term1Den) {
 
     } else {
 
-        for(int i = DENMIN; i < term1Den; i++) {
+        for (int i = DENMIN; i < term1Den; i++) {
 
-            if(term1Den % i == 0) {
+            if (term1Den % i == 0) {
 
                 factors = appendItem(factors, size, i);
                 size++;
@@ -385,9 +632,9 @@ int* fairFactors(int term1Den) {
 
         }
 
-        for(int i = term1Den + 1; i < DENMAX; i++) {
+        for (int i = term1Den + 1; i < DENMAX; i++) {
 
-            if(i % term1Den == 0) {
+            if (i % term1Den == 0) {
 
                 factors = appendItem(factors, size, i);
                 size++;
@@ -456,7 +703,7 @@ void factorial() {
 
     snprintf(problem, sizeof(problem), "%i!", term1);
 
-    for(int i = 2; i < term1 + 1; i++) {
+    for (int i = 2; i < term1 + 1; i++) {
 
         product *= i;
 
@@ -471,7 +718,7 @@ void arithmeticFraction(const char operation) {
     int term1Num = randInt(NUMMIN, NUMMAX);
     int term1Den = randInt(DENMIN, DENMAX);
 
-    while(gcd(term1Num, term1Den) > 1) {
+    while (gcd(term1Num, term1Den) > 1) {
 
         term1Num++;
 
@@ -480,15 +727,15 @@ void arithmeticFraction(const char operation) {
     int* factors = fairFactors(term1Den);
 
     int term2Num = randInt(NUMMIN, NUMMAX);
-    int term2Den = randIntFraction(factors, factorsSize);
+    int term2Den = randIntArray(factors, factorsSize);
 
-    while(gcd(term2Num, term2Den) > 1) {
+    while (gcd(term2Num, term2Den) > 1) {
 
         term2Num++;
 
     }
 
-    if(term1Den == 1 && term2Den == 1) {
+    if (term1Den == 1 && term2Den == 1) {
 
         snprintf(problem, sizeof(problem), "%i %c %i", term1Num, operation, term2Num);
 
@@ -515,7 +762,7 @@ void arithmeticFraction(const char operation) {
     numerator /= gcdivisor;
     denominator /= gcdivisor;
 
-    if(denominator == 1) {
+    if (denominator == 1) {
 
         snprintf(answer, sizeof(answer), "%d", numerator);
 
@@ -553,9 +800,9 @@ void exponentiationInverse() {
 
 void generateProblem() {
 
-    int problemType = randInt(0, 8);
+    int problemType = randIntArray(ptypeProblems, ptypeSize);
 
-    switch(problemType) {
+    switch (problemType) {
 
         case 0:
             arithmetic(ADD);
@@ -600,11 +847,44 @@ void generateProblem() {
 int main(void) {
 
     srand(time(NULL));
-    
+
+/*  Load up problem types  */
+    for (int i = 0; i < PTYPEMEM; i++) {
+
+        ptypeProblems[i] = i;
+
+    }
+
+    for (int i = 0; i < PTYPEMEM; i++) {
+
+        ptypeState[i] = 1;
+
+    }
+
 /*  Initialize graphics drawing  */
     gfx_Begin();
 
     gfx_SetTextTransparentColor(0xDF);
+
+/*  Home page  */
+    gfx_FillScreen(0xFF);
+
+    redrawConfigMenu();
+
+    configMenu();
+
+/*  Available problem types  */
+    for (int i = 0; i < ptypeSize; i++) {
+
+        if (ptypeState[i] == 0) {
+
+            ptypeRemoveItem(i);
+
+            i--;
+
+        }
+
+    }
 
 /*  Draw screen layout  */
     gfx_FillScreen(0xFF);
@@ -630,6 +910,10 @@ int main(void) {
         if(strcmp(guess, answer) == 0) {
 
             score++;
+
+        } else if (score > 0) {
+
+            score--;
 
         }
 
