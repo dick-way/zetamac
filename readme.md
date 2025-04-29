@@ -2,4 +2,4 @@
 
 Arithmetic speed drill testing `addition, subtraction, multiplication, division, exponentiation, factorials` and more.
 
-V 1.01 zetamac
+V 1.02 zetamac

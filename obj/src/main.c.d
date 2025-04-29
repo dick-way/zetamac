@@ -15,5 +15,7 @@ obj/src/main.c.bc: src/main.c \
   /Users/evan/c-workspace/CEdev/include/stdarg.h \
   /Users/evan/c-workspace/CEdev/include/string.h \
   /Users/evan/c-workspace/CEdev/include/keypadc.h \
+  /Users/evan/c-workspace/CEdev/include/fileioc.h \
+  /Users/evan/c-workspace/CEdev/include/ti/vars.h \
   /Users/evan/c-workspace/CEdev/include/math.h \
   /Users/evan/c-workspace/CEdev/include/time.h

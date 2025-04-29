@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <keypadc.h>
+#include <fileioc.h>
 #include <math.h>
 #include <time.h>
 
@@ -56,7 +57,7 @@ double ptypeWeights[PTYPEMEM];  /*  TODO: Weighted probabilities, customization 
 int ptypeState[PTYPEMEM];
 
 int ptypeSize = 9;
-int ptypeSelection = 0;
+int ptypeSelection = 9;
 
 const char *ptypeName[] = {"Addition", "Subtraction", "Multiplication", "Division", "Factorials", "Addition - Fraction", "Subtraction - Fraction", "Exponentiation", "Exponentiation - Inverse"};
 
@@ -74,7 +75,7 @@ const char* characterS = "/";
 const char* characterM = "-";
 
 kb_key_t key1, key3, key4, key5, key6, key7;
-int inputLock[19] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+int inputLock[19];
 
 char problem[17];
 char answer[7];
@@ -83,8 +84,8 @@ char guess[7];
 char scoreDisp[4];
 int score = 0;
 
-int spacingX = 4;
-int spacingY = 4;
+const int spacingX = 4;  /*  Clean up UI code  */
+const int spacingY = 4;
 
 float timer_seconds = 90.0f;
 float difference;
@@ -95,7 +96,12 @@ int digitShift = 8;
 
 uint8_t header = 0x4A;
 
-int randIntWeighted(int min, int max, const double weight[]) {  /*  TODO: just doesn't work [?]  */
+uint8_t var;
+const char* appvar = "Zetamac";
+
+/*  TODO: "Redid config menu, save settings"  */
+
+int randIntWeighted(int min, int max, const double weight[]) {
 
     double r = (double) rand() / RAND_MAX;
     double cumulative = 0.0;
@@ -120,6 +126,31 @@ int randIntWeighted(int min, int max, const double weight[]) {  /*  TODO: just d
 int randIntArray(int arr[], int size) {
 
     return arr[randInt(0, size - 1)];
+
+}
+
+bool ptypeAllOff() {
+
+    for (int i = 0; i < PTYPEMEM; i++) {
+
+        if (ptypeState[i] == 1) {
+
+            return false;
+
+        }
+
+    }
+
+    return true;
+
+}
+
+void forceQuit(int success) {
+
+    gfx_FillScreen(0x00);
+    gfx_End();
+
+    exit(success);
 
 }
 
@@ -221,7 +252,7 @@ void redrawScreen() {
 
     gfx_SetTextFGColor(0x00);
     gfx_SetTextBGColor(0xFF);
-    gfx_PrintStringXY("V 1.01", 6, GFX_LCD_HEIGHT - 14);
+    gfx_PrintStringXY("V 1.02", 6, GFX_LCD_HEIGHT - 14);
 
 }
 
@@ -246,7 +277,7 @@ void clearGuess() {
 
 }
 
-void textEntry() {
+void textEntry() {  /*  TODO: fix this fucking piece of shit  */
 
     do {
 
@@ -258,10 +289,9 @@ void textEntry() {
         key5 = kb_Data[5];
         key6 = kb_Data[6];
 
-        if (key1 == kb_Mode) {
+        if (key1 & kb_Mode) {
 
-            gfx_End();
-            exit(0);
+            forceQuit(0);
 
         }
         
@@ -468,16 +498,32 @@ int ptypeRemoveItem(int index) {
 
 }
 
-void triangleSelection(int color, int selection) {
+void configSelection(int color, int selection) {
 
-    int x0 = (GFX_LCD_WIDTH / 2) - (gfx_GetStringWidth(ptypeName[selection]) / 2);
-    int y0 = (selection * 12);
+    if(ptypeSelection < 9) {
 
-    int x1 = (GFX_LCD_WIDTH / 2) + (gfx_GetStringWidth(ptypeName[selection]) / 2);
+        int x0 = (GFX_LCD_WIDTH / 2) - (gfx_GetStringWidth(ptypeName[selection]) / 2);
+        int y0 = (selection * 12);
 
-    gfx_SetColor(color);
-    gfx_FillTriangle((x0 - 10), y0 + 66, (x0 - 10), y0 + 62, (x0 - 6), y0 + 64);
-    gfx_FillTriangle((x1 + 6), y0 + 66, (x1 + 6), y0 + 62, (x1 + 2), y0 + 64);
+        int x1 = (GFX_LCD_WIDTH / 2) + (gfx_GetStringWidth(ptypeName[selection]) / 2);
+
+        gfx_SetColor(color);
+        gfx_FillTriangle((x0 - 10), y0 + 46, (x0 - 10), y0 + 42, (x0 - 6), y0 + 44);
+        gfx_FillTriangle((x1 + 6), y0 + 46, (x1 + 6), y0 + 42, (x1 + 2), y0 + 44);
+
+    }
+
+    if(ptypeSelection == 9) {
+
+        gfx_SetColor(0x00);
+        gfx_Rectangle((GFX_LCD_WIDTH / 2) - 32, 176, 64, 16);
+
+    } else {
+
+        gfx_SetColor(0xFF);
+        gfx_Rectangle((GFX_LCD_WIDTH / 2) - 32, 176, 64, 16);
+
+    }
 
 }
 
@@ -485,18 +531,20 @@ void redrawConfigMenu() {
 
     for (int i = 0; i < PTYPEMEM; i++) {
 
-        printCentered(ptypeName[i], 60 + (i * 12));
+        printCentered(ptypeName[i], 40 + (i * 12));
 
         if (ptypeState[i] == 0) {
 
             gfx_SetColor(0x00);
-            gfx_Line((GFX_LCD_WIDTH / 2) - (gfx_GetStringWidth(ptypeName[i]) / 2), (i * 12) + 64, (GFX_LCD_WIDTH / 2) + (gfx_GetStringWidth(ptypeName[i]) / 2), (i * 12) + 64);
+            gfx_Line((GFX_LCD_WIDTH / 2) - (gfx_GetStringWidth(ptypeName[i]) / 2), (i * 12) + 44, (GFX_LCD_WIDTH / 2) + (gfx_GetStringWidth(ptypeName[i]) / 2), (i * 12) + 44);
 
         }
 
     }
 
-    triangleSelection(0x00, ptypeSelection);
+    printCentered("Start", 180);
+
+    configSelection(0x00, ptypeSelection);
 
 }
 
@@ -513,17 +561,27 @@ void configMenu() {
 
             inputLock[18] = 1;
 
-            break;
+            if(ptypeSelection < 9) {
+
+                ptypeState[ptypeSelection] = (ptypeState[ptypeSelection] == 1) ? 0 : 1;
+
+                redrawConfigMenu();
+
+            } else {
+
+                break;
+
+            }
 
         } else if (!(key6 & kb_Enter)) {
 
-            inputLock[0] = 0;
+            inputLock[18] = 0;
 
         }
 
         if (key7 & kb_Up && inputLock[12] == 0) {
 
-            triangleSelection(0xFF, ptypeSelection);
+            configSelection(0xFF, ptypeSelection);
 
             if (ptypeSelection > 0) {
 
@@ -547,9 +605,9 @@ void configMenu() {
 
         if (key7 & kb_Down && inputLock[13] == 0) {
 
-            triangleSelection(0xFF, ptypeSelection);
+            configSelection(0xFF, ptypeSelection);
 
-            if (ptypeSelection < 8) {
+            if (ptypeSelection < 9) {
 
                 ptypeSelection++;
 
@@ -569,39 +627,11 @@ void configMenu() {
 
         }
 
-        if (key7 & kb_Left && inputLock[14] == 0) {
-
-            ptypeState[ptypeSelection] = (ptypeState[ptypeSelection] == 1) ? 0 : 1; 
-
-            redrawConfigMenu();
-
-            inputLock[14] = 1;
-
-        } else if (!(key7 & kb_Left)) {
-
-            inputLock[14] = 0;
-
-        }
-
-        if (key7 & kb_Right && inputLock[15] == 0) {
-
-            ptypeState[ptypeSelection] = (ptypeState[ptypeSelection] == 1) ? 0 : 1; 
-
-            redrawConfigMenu();
-
-            inputLock[15] = 1;
-
-        } else if (!(key7 & kb_Right)) {
-
-            inputLock[15] = 0;
-
-        }
-
     } while(1);
 
 }
 
-int* fairFactors(int term1Den) {
+int* fairFactors(int term1Den) {  /*  TODO: point bonus for arithmetic fractions  */
 
     int* factors;
     int size = 0;
@@ -848,7 +878,7 @@ int main(void) {
 
     srand(time(NULL));
 
-/*  Load up problem types  */
+/*  Load problem types and default settings  */
     for (int i = 0; i < PTYPEMEM; i++) {
 
         ptypeProblems[i] = i;
@@ -858,6 +888,34 @@ int main(void) {
     for (int i = 0; i < PTYPEMEM; i++) {
 
         ptypeState[i] = 1;
+
+    }
+
+/*  Create AppVar if it doesn't exist  */
+    var = ti_Open(appvar, "r");
+
+    if(var == 0) {
+
+        var = ti_Open(appvar, "w");
+
+        if (ti_Write(&ptypeState, sizeof(int), PTYPEMEM, var) != PTYPEMEM) {
+
+            os_PutStrFull("Failed initial write");
+            while (!os_GetCSC());
+            return 1;
+
+        }
+
+    }
+
+/*  Read from AppVar  */
+    var = ti_Open(appvar, "r");
+
+    if (ti_Read(&ptypeState, sizeof(int), PTYPEMEM, var) != PTYPEMEM) {
+
+        os_PutStrFull("Failed readback");
+        while (!os_GetCSC());
+        return 1;
 
     }
 
@@ -872,6 +930,17 @@ int main(void) {
     redrawConfigMenu();
 
     configMenu();
+
+/*  Update settings  */
+    var = ti_Open(appvar, "w");
+
+    if (ti_Write(&ptypeState, sizeof(int), PTYPEMEM, var) != PTYPEMEM || ptypeAllOff()) {
+
+        ti_Delete(appvar);
+
+        forceQuit(1);
+
+    }
 
 /*  Available problem types  */
     for (int i = 0; i < ptypeSize; i++) {
@@ -888,6 +957,7 @@ int main(void) {
 
 /*  Draw screen layout  */
     gfx_FillScreen(0xFF);
+    gfx_SetTextScale(1, 1);
     
     gfx_SetColor(0x00);
     gfx_Rectangle((GFX_LCD_WIDTH / 2) - (48 / 2) - spacingX, 120 - spacingY, 48 + (spacingX * 2), 8 + (spacingY * 2));
@@ -923,9 +993,13 @@ int main(void) {
 
 /*  Reset screen, final display  */
     gfx_FillScreen(0xFF);
-    printCentered("program completed", 80);
+    printCentered("Program completed", 80);
 
     printCentered(scoreDisp, 120);
+
+/*  Ensure that the slot is closed  */
+    ti_Close(var);
+    var = 0;
 
 /*  Waits for a key  */
     while (!os_GetCSC());
