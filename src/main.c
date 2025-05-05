@@ -41,16 +41,17 @@ const int DENMAX = 12;
 const int NUMMIN = 1;
 const int NUMMAX = 11;
 
-int factorsSize;
+int factors[8];
+int factorsSize = 0;
 
 /*  exponentiation/root                */
 
 const int BASEMIN = 2;
-const int BASEMAX = 7;
-const double BASEWEIGHTS[6] = {0.48, 0.16, 0.13, 0.13, 0.05, 0.05};
+const int BASEMAX = 9;
+const double BASEWEIGHTS[8] = {0.30, 0.16, 0.13, 0.13, 0.07, 0.07, 0.07, 0.07};
 
 const int EXPMIN = 3;
-const int EXPMAX[6] = {8, 4, 4, 4, 3, 3};
+const int EXPMAX[8] = {8, 4, 4, 4, 3, 3, 3, 3};
 
 int ptypeProblems[PTYPEMEM];
 double ptypeWeights[PTYPEMEM];  /*  TODO: Weighted probabilities, customization  */
@@ -59,20 +60,26 @@ int ptypeState[PTYPEMEM];
 int ptypeSize = 9;
 int ptypeSelection = 9;
 
-const char *ptypeName[] = {"Addition", "Subtraction", "Multiplication", "Division", "Factorials", "Addition - Fraction", "Subtraction - Fraction", "Exponentiation", "Exponentiation - Inverse"};
+const char* ptypeName[] = {"Addition", "Subtraction", "Multiplication", "Division", "Factorials", "Addition - Fraction", "Subtraction - Fraction", "Exponentiation", "Exponentiation - Inverse"};
 
-const char* character0 = "0";
-const char* character1 = "1";
-const char* character2 = "2";
-const char* character3 = "3";
-const char* character4 = "4";
-const char* character5 = "5";
-const char* character6 = "6";
-const char* character7 = "7";
-const char* character8 = "8";
-const char* character9 = "9";
-const char* characterS = "/";
-const char* characterM = "-";
+const char* character[12] = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "/", "-"};
+
+kb_lkey_t inputMap[12] = {
+
+        kb_Key0,
+        kb_Key1,
+        kb_Key2,
+        kb_Key3,
+        kb_Key4,
+        kb_Key5,
+        kb_Key6,
+        kb_Key7,
+        kb_Key8,
+        kb_Key9,
+        kb_KeyDiv,
+        kb_KeyChs
+
+};
 
 kb_key_t key1, key3, key4, key5, key6, key7;
 int inputLock[19];
@@ -83,8 +90,9 @@ char guess[7];
 
 char scoreDisp[4];
 int score = 0;
+int scoreBonus = 0;
 
-const int spacingX = 4;  /*  Clean up UI code  */
+const int spacingX = 4;
 const int spacingY = 4;
 
 float timer_seconds = 90.0f;
@@ -99,7 +107,11 @@ uint8_t header = 0x4A;
 uint8_t var;
 const char* appvar = "Zetamac";
 
-/*  TODO: "Redid config menu, save settings"  */
+int problemDispType = 0;
+char problemDispTerm[4][4];
+char problemDispOperation[2];
+
+int problemTerm[2];
 
 int randIntWeighted(int min, int max, const double weight[]) {
 
@@ -168,25 +180,9 @@ int powInt(int base, int expo) {
 
 }
 
-int* appendItem(int arr[], int size, int item) {  /*  TODO: linked list, no malloc  */
+void appendItem(int size, int item) {
 
-    int* appended_arr = malloc((size + 1) * sizeof(int));
-
-    if (appended_arr == NULL) {
-
-        return NULL;
-
-    }
-
-    for (int i = 0; i < size; i++) {
-
-        appended_arr[i] = arr[i];
-
-    }
-
-    appended_arr[size] = item;
-
-    return appended_arr;
+    factors[size] = item;
 
 }
 
@@ -240,19 +236,80 @@ static void printTime(float elapsed) {
 void redrawScreen() {
 
     gfx_SetColor(0xFF);
-    gfx_FillRectangle((GFX_LCD_WIDTH / 2) - 48, 80, 96, 8);
+    gfx_FillRectangle((GFX_LCD_WIDTH / 2) - 40, 65, 80, 40);
 
-    printCentered(problem, 80);  /*  TODO: LaTeX-type display for problem  */
+    printCentered(problem, 80);
 
-    snprintf(scoreDisp, sizeof(scoreDisp), "%i", score);  /*  TODO: local top 5 leader board  */
+    if (problemDispType == 1) {
+
+        printCentered(problemDispOperation, 80);
+
+        gfx_SetColor(0x00);
+        gfx_FillRectangle((GFX_LCD_WIDTH / 2) - 22, 83, 12, (problemTerm[0] == 1) ? 0 : 2);
+        gfx_FillRectangle((GFX_LCD_WIDTH / 2) + 8, 83, 12, (problemTerm[1] == 1) ? 0 : 2);
+
+        int shift[4] = {0, 0, 0, 0};
+
+        for (int i = 0; i < 4; i++) {
+
+            if(strlen(problemDispTerm[i]) == 2) {
+
+                shift[i] = 3;
+
+            }
+
+        }
+
+        gfx_SetTextFGColor(0x00);
+        gfx_SetTextBGColor(0xFF);
+
+        gfx_PrintStringXY(problemDispTerm[0], (GFX_LCD_WIDTH / 2) - 20 - shift[0], (problemTerm[0] == 1) ? 80 : 74);
+
+        if(problemTerm[0] != 1) {  gfx_PrintStringXY(problemDispTerm[1], (GFX_LCD_WIDTH / 2) - 20 - shift[1], 86);  }
+
+        gfx_PrintStringXY(problemDispTerm[2], (GFX_LCD_WIDTH / 2) + 10 - shift[2], (problemTerm[1] == 1) ? 80 : 74);
+        
+        if(problemTerm[1] != 1) {  gfx_PrintStringXY(problemDispTerm[3], (GFX_LCD_WIDTH / 2) + 10 - shift[3], 86);  }
+
+    } else if (problemDispType == 2) {
+
+        printCentered(problemDispTerm[0], 80);
+
+        gfx_SetTextFGColor(0x00);
+        gfx_SetTextBGColor(0xFF);
+
+        gfx_PrintStringXY(problemDispTerm[1], (GFX_LCD_WIDTH / 2) + 5, 76);
+
+    } else if (problemDispType == 3) {
+
+        printCentered(problemDispTerm[0], 80);
+
+        gfx_SetTextFGColor(0x00);
+        gfx_SetTextBGColor(0xFF);
+
+        gfx_PrintStringXY(problemDispTerm[1], ((GFX_LCD_WIDTH - gfx_GetStringWidth(problemDispTerm[0])) / 2) - 15, 76);
+
+        gfx_SetColor(0x00);
+
+        gfx_FillRectangle(((GFX_LCD_WIDTH - gfx_GetStringWidth(problemDispTerm[0])) / 2) - 5, 74, 2, 14);
+        gfx_FillRectangle(((GFX_LCD_WIDTH - gfx_GetStringWidth(problemDispTerm[0])) / 2) - 5, 74, gfx_GetStringWidth(problemDispTerm[0]) + 7, 2);
+
+        gfx_Line(((GFX_LCD_WIDTH - gfx_GetStringWidth(problemDispTerm[0])) / 2) - 8, 85, ((GFX_LCD_WIDTH - gfx_GetStringWidth(problemDispTerm[0])) / 2) - 5, 88);
+
+    }
+
+    snprintf(scoreDisp, sizeof(scoreDisp), "%i", score);
+
+    gfx_SetColor(header);
+    gfx_FillRectangle(290, 0, 30, 20);
 
     gfx_SetTextFGColor(0xFF);
     gfx_SetTextBGColor(header);
-    gfx_PrintStringXY(scoreDisp, GFX_LCD_WIDTH - 6 - (8 * strlen(scoreDisp)), 6);
+    gfx_PrintStringXY(scoreDisp, GFX_LCD_WIDTH - 6 - (gfx_GetStringWidth(scoreDisp)), 6);
 
     gfx_SetTextFGColor(0x00);
     gfx_SetTextBGColor(0xFF);
-    gfx_PrintStringXY("V 1.02", 6, GFX_LCD_HEIGHT - 14);
+    gfx_PrintStringXY("V 1.03", 6, GFX_LCD_HEIGHT - 14);
 
 }
 
@@ -277,16 +334,13 @@ void clearGuess() {
 
 }
 
-void textEntry() {  /*  TODO: fix this fucking piece of shit  */
+void textEntry() {  /*  TODO: line feed  */
 
     do {
 
         kb_Scan();
 
         key1 = kb_Data[1];
-        key3 = kb_Data[3];
-        key4 = kb_Data[4];
-        key5 = kb_Data[5];
         key6 = kb_Data[6];
 
         if (key1 & kb_Mode) {
@@ -295,135 +349,19 @@ void textEntry() {  /*  TODO: fix this fucking piece of shit  */
 
         }
         
-        if (key3 & kb_0 && inputLock[0] == 0) {
+        for (int i = 0; i < 12; i++) {
 
-            appendGuess(character0);
+            if (kb_Data[inputMap[i] >> 8] & inputMap[i] && inputLock[i] == 0) {
 
-            inputLock[0] = 1;
+                appendGuess(character[i]);
 
-        } else if (!(key3 & kb_0)) {
+                inputLock[i] = 1;
 
-            inputLock[0] = 0;
+            } else if (!(kb_Data[inputMap[i] >> 8] & inputMap[i])) {
 
-        }
-        
-        if (key3 & kb_1 && inputLock[1] == 0) {
+                inputLock[i] = 0;
 
-            appendGuess(character1);
-
-            inputLock[1] = 1;
-
-        } else if (!(key3 & kb_1)) {
-
-            inputLock[1] = 0;
-
-        }
-        
-        if (key3 & kb_4 && inputLock[4] == 0) {
-
-            appendGuess(character4);
-
-            inputLock[4] = 1;
-
-        } else if (!(key3 & kb_4)) {
-
-            inputLock[4] = 0;
-
-        }
-        
-        if (key3 & kb_7 && inputLock[7] == 0) {
-
-            appendGuess(character7);
-
-            inputLock[7] = 1;
-
-        } else if (!(key3 & kb_7)) {
-
-            inputLock[7] = 0;
-
-        }
-        
-        if (key4 & kb_2 && inputLock[2] == 0) {
-
-            appendGuess(character2);
-
-            inputLock[2] = 1;
-
-        } else if (!(key4 & kb_2)) {
-
-            inputLock[2] = 0;
-
-        }
-        
-        if (key4 & kb_5 && inputLock[5] == 0) {
-
-            appendGuess(character5);
-
-            inputLock[5] = 1;
-
-        } else if (!(key4 & kb_5)) {
-
-            inputLock[5] = 0;
-
-        }
-        
-        if (key4 & kb_8 && inputLock[8] == 0) {
-
-            appendGuess(character8);
-
-            inputLock[8] = 1;
-
-        } else if (!(key4 & kb_8)) {
-
-            inputLock[8] = 0;
-
-        }
-        
-        if (key5 & kb_3 && inputLock[3] == 0) {
-
-            appendGuess(character3);
-
-            inputLock[3] = 1;
-
-        } else if (!(key5 & kb_3)) {
-
-            inputLock[3] = 0;
-
-        }
-        
-        if (key5 & kb_6 && inputLock[6] == 0) {
-
-            appendGuess(character6);
-
-            inputLock[6] = 1;
-
-        } else if (!(key5 & kb_6)) {
-
-            inputLock[6] = 0;
-
-        }
-        
-        if (key5 & kb_9 && inputLock[9] == 0) {
-
-            appendGuess(character9);
-
-            inputLock[9] = 1;
-
-        } else if (!(key5 & kb_9)) {
-
-            inputLock[9] = 0;
-
-        }
-        
-        if (key5 & kb_Chs && inputLock[11] == 0) {
-
-            appendGuess(characterM);
-
-            inputLock[11] = 1;
-
-        } else if (!(key5 & kb_Chs)) {
-
-            inputLock[11] = 0;
+            }
 
         }
         
@@ -448,18 +386,6 @@ void textEntry() {  /*  TODO: fix this fucking piece of shit  */
         } else if (!(key6 & kb_Clear)) {
 
             inputLock[16] = 0;
-
-        }
-        
-        if (key6 & kb_Div && inputLock[10] == 0) {
-
-            appendGuess(characterS);
-
-            inputLock[10] = 1;
-
-        } else if (!(key6 & kb_Div)) {
-
-            inputLock[10] = 0;
 
         }
 
@@ -488,6 +414,7 @@ int ptypeRemoveItem(int index) {
     for (int i = index; i < ptypeSize - 1; i++) {
 
         ptypeProblems[i] = ptypeProblems[i + 1];
+        ptypeWeights[i] = ptypeWeights[i + 1];
         ptypeState[i] = ptypeState[i + 1];
 
     }
@@ -631,10 +558,9 @@ void configMenu() {
 
 }
 
-int* fairFactors(int term1Den) {  /*  TODO: point bonus for arithmetic fractions  */
+void fairFactors(int term1Den) {
 
-    int* factors;
-    int size = 0;
+    factorsSize = 0;
 
     if (1 < term1Den && term1Den < 6 && randInt(0, 1) == 1) {
 
@@ -642,12 +568,14 @@ int* fairFactors(int term1Den) {  /*  TODO: point bonus for arithmetic fractions
 
             if (term1Den != i && (i % term1Den != 0 || term1Den % i != 0)) {
 
-                factors = appendItem(factors, size, i);
-                size++;
+                appendItem(factorsSize, i);
+                factorsSize++;
 
             }
 
         }
+
+        scoreBonus = 2;
 
     } else {
 
@@ -655,8 +583,8 @@ int* fairFactors(int term1Den) {  /*  TODO: point bonus for arithmetic fractions
 
             if (term1Den % i == 0) {
 
-                factors = appendItem(factors, size, i);
-                size++;
+                appendItem(factorsSize, i);
+                factorsSize++;
 
             }
 
@@ -666,18 +594,16 @@ int* fairFactors(int term1Den) {  /*  TODO: point bonus for arithmetic fractions
 
             if (i % term1Den == 0) {
 
-                factors = appendItem(factors, size, i);
-                size++;
+                appendItem(factorsSize, i);
+                factorsSize++;
 
             }
 
         }
+
+        scoreBonus = 1;
     
     }
-
-    factorsSize = size;
-
-    return factors;
 
 }
 
@@ -754,7 +680,7 @@ void arithmeticFraction(const char operation) {
 
     }
 
-    int* factors = fairFactors(term1Den);
+    fairFactors(term1Den);
 
     int term2Num = randInt(NUMMIN, NUMMAX);
     int term2Den = randIntArray(factors, factorsSize);
@@ -765,23 +691,19 @@ void arithmeticFraction(const char operation) {
 
     }
 
-    if (term1Den == 1 && term2Den == 1) {
+    problem[0] = '\0';
 
-        snprintf(problem, sizeof(problem), "%i %c %i", term1Num, operation, term2Num);
+    problemDispType = 1;
 
-    } else if(term1Den == 1) {
+    snprintf(problemDispTerm[0], 4, "%i", term1Num);
+    snprintf(problemDispTerm[1], 4, "%i", term1Den);
+    snprintf(problemDispTerm[2], 4, "%i", term2Num);
+    snprintf(problemDispTerm[3], 4, "%i", term2Den);
 
-        snprintf(problem, sizeof(problem), "%i %c %i/%i", term1Num, operation, term2Num, term2Den);
+    snprintf(problemDispOperation, 2, "%c", operation);
 
-    } else if (term2Den == 1) {
-
-        snprintf(problem, sizeof(problem), "%i/%i %c %i", term1Num, term1Den, operation, term2Num);
-
-    } else {
-
-        snprintf(problem, sizeof(problem), "%i/%i %c %i/%i", term1Num, term1Den, operation, term2Num, term2Den);
-
-    }
+    problemTerm[0] = term1Den;
+    problemTerm[1] = term2Den;
 
     int denominator = lcm(term1Den, term2Den);
     int scaled1Num = term1Num * (denominator / term1Den);
@@ -789,6 +711,13 @@ void arithmeticFraction(const char operation) {
     int numerator = (operation == ADD) ? scaled1Num + scaled2Num : scaled1Num - scaled2Num;
 
     int gcdivisor = gcd(abs(numerator), denominator);
+
+    if(gcdivisor > 1) {
+
+        scoreBonus++;
+
+    }
+
     numerator /= gcdivisor;
     denominator /= gcdivisor;
 
@@ -802,8 +731,6 @@ void arithmeticFraction(const char operation) {
 
     }
 
-    free(factors);
-
 }
 
 void exponentiation() {
@@ -811,7 +738,12 @@ void exponentiation() {
     int term1 = randIntWeighted(BASEMIN, BASEMAX, BASEWEIGHTS);
     int term2 = randInt(3, EXPMAX[term1 - BASEMIN]);
 
-    snprintf(problem, sizeof(problem), "%i^%i", term1, term2);
+    problem[0] = '\0';
+
+    problemDispType = 2;
+
+    snprintf(problemDispTerm[0], 4, "%i", term1);
+    snprintf(problemDispTerm[1], 4, "%i", term2);
 
     snprintf(answer, sizeof(answer), "%i", powInt(term1, term2));
 
@@ -822,7 +754,12 @@ void exponentiationInverse() {
     int term1 = randIntWeighted(BASEMIN, BASEMAX, BASEWEIGHTS);
     int term2 = randInt(3, EXPMAX[term1 - BASEMIN]);
 
-    snprintf(problem, sizeof(problem), "%i^(1/%i)", powInt(term1, term2), term2);
+    problem[0] = '\0';
+
+    problemDispType = 3;
+
+    snprintf(problemDispTerm[0], 4, "%i", powInt(term1, term2));
+    snprintf(problemDispTerm[1], 4, "%i", term2);
 
     snprintf(answer, sizeof(answer), "%d", term1);
 
@@ -887,6 +824,12 @@ int main(void) {
 
     for (int i = 0; i < PTYPEMEM; i++) {
 
+        ptypeWeights[i] = 0.11;
+
+    }
+
+    for (int i = 0; i < PTYPEMEM; i++) {
+
         ptypeState[i] = 1;
 
     }
@@ -900,7 +843,7 @@ int main(void) {
 
         if (ti_Write(&ptypeState, sizeof(int), PTYPEMEM, var) != PTYPEMEM) {
 
-            os_PutStrFull("Failed initial write");
+            os_PutStrFull("Failed write");
             while (!os_GetCSC());
             return 1;
 
@@ -979,7 +922,7 @@ int main(void) {
 
         if(strcmp(guess, answer) == 0) {
 
-            score++;
+            score += scoreBonus + 1;
 
         } else if (score > 0) {
 
@@ -987,13 +930,17 @@ int main(void) {
 
         }
 
+        scoreBonus = 0;
+
+        problemDispType = 0;
+
         clearGuess();
 
     } while(difference > 0);
 
 /*  Reset screen, final display  */
     gfx_FillScreen(0xFF);
-    printCentered("Program completed", 80);
+    printCentered("program completed", 80);
 
     printCentered(scoreDisp, 120);
 
