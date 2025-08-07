@@ -11,7 +11,8 @@
 #include <math.h>
 #include <time.h>
 
-#define PTYPEMEM 9
+#define PTYPEMEM 11
+#define FACTORSMAX 16
 
 /*  arithmetic operation type          */
 
@@ -41,7 +42,7 @@ const int DENMAX = 12;
 const int NUMMIN = 1;
 const int NUMMAX = 11;
 
-int factors[8];
+int factors[FACTORSMAX];
 int factorsSize = 0;
 
 /*  exponentiation/root                */
@@ -53,14 +54,23 @@ const double BASEWEIGHTS[8] = {0.30, 0.16, 0.13, 0.13, 0.07, 0.07, 0.07, 0.07};
 const int EXPMIN = 3;
 const int EXPMAX[8] = {8, 4, 4, 4, 3, 3, 3, 3};
 
+/*  perfect squares/root               */
+
+const int SQUAREMIN = 15;
+const int SQUAREMAX = 32;
+
 int ptypeProblems[PTYPEMEM];
-double ptypeWeights[PTYPEMEM];  /*  TODO: Weighted probabilities, customization  */
 int ptypeState[PTYPEMEM];
 
-int ptypeSize = 9;
-int ptypeSelection = 9;
+int ptypeSize = PTYPEMEM;
+int ptypeSelection = PTYPEMEM;
 
-const char* ptypeName[] = {"Addition", "Subtraction", "Multiplication", "Division", "Factorials", "Addition - Fraction", "Subtraction - Fraction", "Exponentiation", "Exponentiation - Inverse"};
+char* highScoreDisp = "High Score: XX";
+int highScore = 0;
+
+int appvarData[PTYPEMEM + 1];
+
+const char* ptypeName[] = {"Addition", "Subtraction", "Multiplication", "Division", "Factorials", "Addition - Fraction", "Subtraction - Fraction", "Exponentiation", "Exponentiation - Inverse", "Perfect Squares", "Perfect Square Roots"};
 
 const char* character[12] = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "/", "-"};
 
@@ -85,12 +95,15 @@ kb_key_t key1, key3, key4, key5, key6, key7;
 int inputLock[19];
 
 char problem[17];
-char answer[7];
-char guess[7];
+char answer[8];
+char guess[8];
 
 char scoreDisp[4];
 int score = 0;
 int scoreBonus = 0;
+
+int newHighScore = 0;
+int validSettings = 0;
 
 const int spacingX = 4;
 const int spacingY = 4;
@@ -107,9 +120,11 @@ uint8_t header = 0x4A;
 uint8_t var;
 const char* appvar = "Zetamac";
 
-int problemDispType = 0;
+int problemDispType = 0;  /*  0: plain,  1: fraction, 2: exponent, 3: square root  */
 char problemDispTerm[4][4];
 char problemDispOperation[2];
+
+int problemDispSquare = 0;
 
 int problemTerm[2];
 
@@ -157,10 +172,28 @@ bool ptypeAllOff() {
 
 }
 
+bool ptypeValidity() {
+
+    for (int i = 0; i < PTYPEMEM; i++) {
+
+        if (ptypeState[i] == 0) {
+
+            return false;
+
+        }
+
+    }
+
+    return true;
+    
+}
+
 void forceQuit(int success) {
 
     gfx_FillScreen(0x00);
     gfx_End();
+
+    ti_Close(var);
 
     exit(success);
 
@@ -182,7 +215,11 @@ int powInt(int base, int expo) {
 
 void appendItem(int size, int item) {
 
-    factors[size] = item;
+    if (size < FACTORSMAX) {
+
+        factors[size] = item;
+
+    }
 
 }
 
@@ -217,6 +254,8 @@ static void printTime(float elapsed) {
 
     os_RealToStr(timerDisp, &elapsed_real, 8, 1, 2);
 
+    timerDisp[strlen(timerDisp) - 1] = '\0';
+
     gfx_SetTextFGColor(0xFF);
     gfx_SetTextBGColor(header);
 
@@ -225,7 +264,7 @@ static void printTime(float elapsed) {
         gfx_PrintStringXY("0", 6, 6);
         
         gfx_SetColor(header);
-        gfx_FillRectangle(38, 6, 10, 8);
+        gfx_FillRectangle(30, 6, 10, 8);
 
     }
 
@@ -278,7 +317,15 @@ void redrawScreen() {
         gfx_SetTextFGColor(0x00);
         gfx_SetTextBGColor(0xFF);
 
-        gfx_PrintStringXY(problemDispTerm[1], (GFX_LCD_WIDTH / 2) + 5, 76);
+        int shift = 5;
+
+        if (problemDispSquare == 1) {
+
+            shift += 4;
+
+        }
+
+        gfx_PrintStringXY(problemDispTerm[1], (GFX_LCD_WIDTH / 2) + shift, 76);
 
     } else if (problemDispType == 3) {
 
@@ -287,7 +334,11 @@ void redrawScreen() {
         gfx_SetTextFGColor(0x00);
         gfx_SetTextBGColor(0xFF);
 
-        gfx_PrintStringXY(problemDispTerm[1], ((GFX_LCD_WIDTH - gfx_GetStringWidth(problemDispTerm[0])) / 2) - 15, 76);
+        if (problemDispSquare == 0) {
+
+            gfx_PrintStringXY(problemDispTerm[1], ((GFX_LCD_WIDTH - gfx_GetStringWidth(problemDispTerm[0])) / 2) - 15, 76);
+
+        }
 
         gfx_SetColor(0x00);
 
@@ -309,7 +360,7 @@ void redrawScreen() {
 
     gfx_SetTextFGColor(0x00);
     gfx_SetTextBGColor(0xFF);
-    gfx_PrintStringXY("V 1.03", 6, GFX_LCD_HEIGHT - 14);
+    gfx_PrintStringXY("V 1.04", 6, GFX_LCD_HEIGHT - 14);
 
 }
 
@@ -317,7 +368,7 @@ void appendGuess(const char *item) {
 
     int length = (int) strlen(guess);
 
-    if (length < 6) {
+    if (length < 7) {
 
         appendChar(item, length);
 
@@ -328,13 +379,13 @@ void appendGuess(const char *item) {
 void clearGuess() {
 
     gfx_SetColor(0xFF);
-    gfx_FillRectangle((GFX_LCD_WIDTH / 2) - (48 / 2), 120, 48, 8);
+    gfx_FillRectangle((GFX_LCD_WIDTH / 2) - 30, 120, 60, 8);
 
     guess[0] = '\0';
 
 }
 
-void textEntry() {  /*  TODO: line feed  */
+void textEntry() {
 
     do {
 
@@ -348,7 +399,7 @@ void textEntry() {  /*  TODO: line feed  */
             forceQuit(0);
 
         }
-        
+
         for (int i = 0; i < 12; i++) {
 
             if (kb_Data[inputMap[i] >> 8] & inputMap[i] && inputLock[i] == 0) {
@@ -364,7 +415,7 @@ void textEntry() {  /*  TODO: line feed  */
             }
 
         }
-        
+
         if (key6 & kb_Enter && inputLock[18] == 0 && guess[0] != '\0') {
 
             inputLock[18] = 1;
@@ -376,7 +427,7 @@ void textEntry() {  /*  TODO: line feed  */
             inputLock[18] = 0;
 
         }
-        
+
         if (key6 & kb_Clear && inputLock[16] == 0) {
 
             clearGuess();
@@ -391,7 +442,7 @@ void textEntry() {  /*  TODO: line feed  */
 
         gfx_SetTextFGColor(0x00);
         gfx_SetTextBGColor(0xFF);
-        gfx_PrintStringXY(guess, (GFX_LCD_WIDTH / 2) - (48 / 2), 120);
+        gfx_PrintStringXY(guess, (GFX_LCD_WIDTH / 2) - (30), 120);
 
         clock_t now = clock();
         float elapsed = (float)(now - start) / CLOCKS_PER_SEC;
@@ -414,7 +465,6 @@ int ptypeRemoveItem(int index) {
     for (int i = index; i < ptypeSize - 1; i++) {
 
         ptypeProblems[i] = ptypeProblems[i + 1];
-        ptypeWeights[i] = ptypeWeights[i + 1];
         ptypeState[i] = ptypeState[i + 1];
 
     }
@@ -427,20 +477,20 @@ int ptypeRemoveItem(int index) {
 
 void configSelection(int color, int selection) {
 
-    if(ptypeSelection < 9) {
+    if(ptypeSelection < PTYPEMEM) {
 
         int x0 = (GFX_LCD_WIDTH / 2) - (gfx_GetStringWidth(ptypeName[selection]) / 2);
         int y0 = (selection * 12);
 
-        int x1 = (GFX_LCD_WIDTH / 2) + (gfx_GetStringWidth(ptypeName[selection]) / 2);
+        int x1 = (GFX_LCD_WIDTH / 2) + (gfx_GetStringWidth(ptypeName[selection]) / 2) + 1;
 
         gfx_SetColor(color);
-        gfx_FillTriangle((x0 - 10), y0 + 46, (x0 - 10), y0 + 42, (x0 - 6), y0 + 44);
-        gfx_FillTriangle((x1 + 6), y0 + 46, (x1 + 6), y0 + 42, (x1 + 2), y0 + 44);
+        gfx_FillTriangle((x0 - 10), y0 + 36, (x0 - 10), y0 + 32, (x0 - 6), y0 + 34);
+        gfx_FillTriangle((x1 + 6), y0 + 36, (x1 + 6), y0 + 32, (x1 + 2), y0 + 34);
 
     }
 
-    if(ptypeSelection == 9) {
+    if(ptypeSelection == PTYPEMEM) {
 
         gfx_SetColor(0x00);
         gfx_Rectangle((GFX_LCD_WIDTH / 2) - 32, 176, 64, 16);
@@ -458,12 +508,12 @@ void redrawConfigMenu() {
 
     for (int i = 0; i < PTYPEMEM; i++) {
 
-        printCentered(ptypeName[i], 40 + (i * 12));
+        printCentered(ptypeName[i], 30 + (i * 12));
 
         if (ptypeState[i] == 0) {
 
             gfx_SetColor(0x00);
-            gfx_Line((GFX_LCD_WIDTH / 2) - (gfx_GetStringWidth(ptypeName[i]) / 2), (i * 12) + 44, (GFX_LCD_WIDTH / 2) + (gfx_GetStringWidth(ptypeName[i]) / 2), (i * 12) + 44);
+            gfx_Line((GFX_LCD_WIDTH / 2) - (gfx_GetStringWidth(ptypeName[i]) / 2), (i * 12) + 34, (GFX_LCD_WIDTH / 2) + (gfx_GetStringWidth(ptypeName[i]) / 2), (i * 12) + 34);
 
         }
 
@@ -473,6 +523,11 @@ void redrawConfigMenu() {
 
     configSelection(0x00, ptypeSelection);
 
+    snprintf(highScoreDisp, 15, "High Score: %d", highScore /*  1 less for some reason  */);
+
+    gfx_SetColor(0x00);
+    gfx_PrintStringXY(highScoreDisp, 4, GFX_LCD_HEIGHT - 12);
+
 }
 
 void configMenu() {
@@ -481,14 +536,22 @@ void configMenu() {
 
         kb_Scan();
 
+        key1 = kb_Data[1];
+
         key6 = kb_Data[6];
         key7 = kb_Data[7];
+
+        if (key1 & kb_Mode) {
+
+            forceQuit(0);
+
+        }
 
         if (key6 & kb_Enter && inputLock[18] == 0) {
 
             inputLock[18] = 1;
 
-            if(ptypeSelection < 9) {
+            if(ptypeSelection < PTYPEMEM) {
 
                 ptypeState[ptypeSelection] = (ptypeState[ptypeSelection] == 1) ? 0 : 1;
 
@@ -516,7 +579,7 @@ void configMenu() {
 
             } else {
 
-                ptypeSelection = 8;
+                ptypeSelection = PTYPEMEM - 1;
 
             }
 
@@ -534,7 +597,7 @@ void configMenu() {
 
             configSelection(0xFF, ptypeSelection);
 
-            if (ptypeSelection < 9) {
+            if (ptypeSelection < PTYPEMEM) {
 
                 ptypeSelection++;
 
@@ -765,6 +828,40 @@ void exponentiationInverse() {
 
 }
 
+void perfectSquare() {
+
+    int term1 = randInt(SQUAREMIN, SQUAREMAX);
+    int term2 = 2;
+
+    problem[0] = '\0';
+
+    problemDispType = 2;
+    problemDispSquare = 1;
+
+    snprintf(problemDispTerm[0], 4, "%i", term1);
+    snprintf(problemDispTerm[1], 4, "%i", term2);
+
+    snprintf(answer, sizeof(answer), "%i", powInt(term1, term2));
+
+}
+
+void perfectSquareInverse() {
+
+    int term1 = randInt(SQUAREMIN, SQUAREMAX);
+    int term2 = 2;
+
+    problem[0] = '\0';
+
+    problemDispType = 3;
+    problemDispSquare = 1;
+
+    snprintf(problemDispTerm[0], 4, "%i", powInt(term1, term2));
+    snprintf(problemDispTerm[1], 4, "%i", term2);
+
+    snprintf(answer, sizeof(answer), "%d", term1);
+
+}
+
 void generateProblem() {
 
     int problemType = randIntArray(ptypeProblems, ptypeSize);
@@ -806,6 +903,54 @@ void generateProblem() {
         case 8:
             exponentiationInverse();
             break;
+        
+        case 9:
+            perfectSquare();
+            break;
+        
+        case 10:
+            perfectSquareInverse();
+            break;
+
+    }
+
+}
+
+void convertFromSettings(int settingsData[]) {
+
+    for (int i = 0; i < PTYPEMEM; i++) {
+
+        ptypeState[i] = settingsData[i];
+
+    }
+
+    highScore = settingsData[PTYPEMEM];
+
+}
+
+void convertToSettings(int ptypeData[], int highScoreData) {
+
+        for (int i = 0; i < PTYPEMEM; i++) {
+
+            appvarData[i] = ptypeData[i];
+
+        }
+
+        appvarData[PTYPEMEM] = highScoreData;
+
+}
+
+void convertToHighScore(int highScoreData) {
+
+    appvarData[PTYPEMEM] = highScoreData;
+
+}
+
+void resetPTYPE() {
+
+    for (int i = 0; i < PTYPEMEM; i++) {
+
+        appvarData[i] = 1;
 
     }
 
@@ -824,43 +969,49 @@ int main(void) {
 
     for (int i = 0; i < PTYPEMEM; i++) {
 
-        ptypeWeights[i] = 0.11;
-
-    }
-
-    for (int i = 0; i < PTYPEMEM; i++) {
-
         ptypeState[i] = 1;
 
     }
 
+    highScore = 0;
+
+    convertToSettings(ptypeState, highScore);
+
 /*  Create AppVar if it doesn't exist  */
     var = ti_Open(appvar, "r");
 
-    if(var == 0) {
+    ti_Close(var);
+
+    if (var == 0) {
 
         var = ti_Open(appvar, "w");
 
-        if (ti_Write(&ptypeState, sizeof(int), PTYPEMEM, var) != PTYPEMEM) {
+        if (ti_Write(appvarData, sizeof(int), PTYPEMEM + 1, var) != PTYPEMEM + 1) {
 
-            os_PutStrFull("Failed write");
+            os_PutStrFull("Failed initial write");
             while (!os_GetCSC());
             return 1;
 
         }
+
+        ti_Close(var);
 
     }
 
 /*  Read from AppVar  */
     var = ti_Open(appvar, "r");
 
-    if (ti_Read(&ptypeState, sizeof(int), PTYPEMEM, var) != PTYPEMEM) {
+    if (ti_Read(appvarData, sizeof(int), PTYPEMEM + 1, var) != PTYPEMEM + 1) {
 
         os_PutStrFull("Failed readback");
         while (!os_GetCSC());
         return 1;
 
     }
+
+    ti_Close(var);
+
+    convertFromSettings(appvarData);
 
 /*  Initialize graphics drawing  */
     gfx_Begin();
@@ -877,11 +1028,51 @@ int main(void) {
 /*  Update settings  */
     var = ti_Open(appvar, "w");
 
-    if (ti_Write(&ptypeState, sizeof(int), PTYPEMEM, var) != PTYPEMEM || ptypeAllOff()) {
+    convertToSettings(ptypeState, highScore);
 
-        ti_Delete(appvar);
+    if (ti_Write(appvarData, sizeof(int), PTYPEMEM + 1, var) != PTYPEMEM + 1) {
 
-        forceQuit(1);
+        gfx_End();
+
+        os_PutStrFull("Failed write");
+        while (!os_GetCSC());
+        return 1;
+
+    }
+
+    ti_Close(var);
+
+    if (ptypeValidity() == true) {
+
+        validSettings = 1;
+
+    }
+
+    if (ptypeAllOff()) {
+
+    /*  ti_Delete(appvar);  */
+
+        resetPTYPE();
+
+        var = ti_Open(appvar, "w");
+
+        if (ti_Write(appvarData, sizeof(int), PTYPEMEM + 1, var) != PTYPEMEM + 1) {
+
+            gfx_End();
+    
+            os_PutStrFull("Failed settings reset");
+            while (!os_GetCSC());
+            return 1;
+    
+        }
+
+        ti_Close(var);
+
+        gfx_End();
+
+        os_PutStrFull("Invalid settings");
+        while (!os_GetCSC());
+        return 1;
 
     }
 
@@ -903,7 +1094,7 @@ int main(void) {
     gfx_SetTextScale(1, 1);
     
     gfx_SetColor(0x00);
-    gfx_Rectangle((GFX_LCD_WIDTH / 2) - (48 / 2) - spacingX, 120 - spacingY, 48 + (spacingX * 2), 8 + (spacingY * 2));
+    gfx_Rectangle((GFX_LCD_WIDTH / 2) - (30) - spacingX, 120 - spacingY, 60 + (spacingX * 2), 8 + (spacingY * 2));
 
     gfx_SetColor(header);
     gfx_FillRectangle(0, 0, GFX_LCD_WIDTH, 20);
@@ -920,11 +1111,11 @@ int main(void) {
 
         textEntry();
 
-        if(strcmp(guess, answer) == 0) {
+        if (strcmp(guess, answer) == 0 && score + scoreBonus + 1 < 100) {
 
             score += scoreBonus + 1;
 
-        } else if (score > 0) {
+        } else if (score > 0 && difference > 0) {
 
             score--;
 
@@ -933,16 +1124,51 @@ int main(void) {
         scoreBonus = 0;
 
         problemDispType = 0;
+        problemDispSquare = 0;
 
         clearGuess();
 
     } while(difference > 0);
 
+/*  Update high score  */
+
+    if (score > highScore && validSettings == 1) {
+
+        newHighScore = 1;
+
+        var = ti_Open(appvar, "w");
+
+        convertToHighScore(score);
+
+        if (ti_Write(appvarData, sizeof(int), PTYPEMEM + 1, var) != PTYPEMEM + 1) {
+
+            os_PutStrFull("Failed high score write");
+            while (!os_GetCSC());
+            return 1;
+
+        }
+
+        ti_Close(var);
+
+    }
+
 /*  Reset screen, final display  */
     gfx_FillScreen(0xFF);
-    printCentered("program completed", 80);
+    printCentered("Final Score:", 80);
 
     printCentered(scoreDisp, 120);
+
+    if (validSettings == 0) {
+
+        gfx_PrintStringXY("*", (GFX_LCD_WIDTH / 2) - 24, 116);
+
+    }
+
+    if (newHighScore == 1) {
+
+        printCentered("New High Score!", 160);
+
+    }
 
 /*  Ensure that the slot is closed  */
     ti_Close(var);
