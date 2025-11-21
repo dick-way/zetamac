@@ -11,6 +11,8 @@
 #include <math.h>
 #include <time.h>
 
+#include <debug.h>
+
 #define PTYPEMEM 11
 #define FACTORSMAX 16
 
@@ -913,6 +915,8 @@ void generateProblem() {
             break;
 
     }
+
+    dbg_printf("%s\n", answer);
 
 }
 
