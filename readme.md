@@ -4,4 +4,4 @@ Arithmetic speed drill testing `addition, subtraction, multiplication, division,
 
 V 1.04 Zetamac
 
-![https://www.cemetech.net/media/archives/screenshots/2025/11/screenshot_GXRWVMp_OsLgiNO.png]
+!(https://www.cemetech.net/media/archives/screenshots/2025/11/screenshot_GXRWVMp_OsLgiNO.png)
